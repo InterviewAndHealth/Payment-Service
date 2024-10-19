@@ -22,7 +22,9 @@ class DB {
         host: PGHOST,
         port: PGPORT,
         database: PGDATABASE,
-        ssl: NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+        ssl: {
+          rejectUnauthorized: false,
+        },
       });
 
       this.#pool.on("error", (err) => {
@@ -35,7 +37,8 @@ class DB {
         this.#isConnected = true;
       });
 
-      this.createTable();
+      this.paymentsTable();
+      this.interviewAvailabilityTable();
     }
     return this.#pool.connect();
   }
@@ -44,15 +47,15 @@ class DB {
     return this.#pool.query(query);
   }
 
-  static async createTable() {
-    const pathToSQL = path.join(__dirname, "queries", "create.sql");
+  static async paymentsTable() {
+    const pathToSQL = path.join(__dirname, "queries", "payments.sql");
     const rawQuery = fs.readFileSync(pathToSQL).toString();
     const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ");
     return this.#pool.query(query);
   }
 
-  static async dropTable() {
-    const pathToSQL = path.join(__dirname, "queries", "drop.sql");
+  static async interviewAvailabilityTable() {
+    const pathToSQL = path.join(__dirname, "queries", "interview_availability.sql");
     const rawQuery = fs.readFileSync(pathToSQL).toString();
     const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ");
     return this.#pool.query(query);

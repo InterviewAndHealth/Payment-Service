@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Checkout</title>
+    <script src="https://js.stripe.com/v3/"></script> <!-- Stripe.js -->
+</head>
+<body>
+    <h1>Buy Sample Product</h1>
+    <button id="checkout-button">Checkout</button>
+
+    <script>
+        document.getElementById("checkout-button").addEventListener("click", createCheckoutSession);
+
+        async function createCheckoutSession() {
+            try {
+                const response = await fetch("http://localhost:8005/createcheckoutsession", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJrNjc1bHB6am4wOHIiLCJpYXQiOjE3MjkzMTAxMTgsImV4cCI6MTcyOTM5NjUxOH0.yt1H-TvmLG8gJO8ONW827aghEv0ab-yJYMVTgbYzjko" // Add the Authorization token here
+                    },
+                    body: JSON.stringify({
+                        product: {
+                            name: "Sample Product",
+                            price: 100, // price in paise for INR
+                            quantity: 1,
+                            currency: "inr"
+                        },
+                        successUrl:"http://localhost:8005/success",
+                        cancelUrl: "http://localhost:8005/failure",
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+
+                const session = await response.json();
+
+                // Redirect to Stripe Checkout
+                const stripe = Stripe("pk_test_51QAshRP0xG2sG4wKzvaLbaeWuINID8QdIKKDD9CPWogA7kn8xTaFjD8nC66GMT8dmRBoMHmOzyTiO4atUwnB0Lvu00ZSh4QVyf");
+                const result = await stripe.redirectToCheckout({ sessionId: session.id });
+
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            } catch (error) {
+                console.error("Error during checkout session creation:", error);
+                alert("Failed to create checkout session. Please try again.");
+            }
+        }
+    </script>
+</body>
+</html>

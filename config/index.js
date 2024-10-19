@@ -26,4 +26,6 @@ module.exports = {
   TEST_RPC: process.env.TEST_RPC,
   EVENT_TYPES,
   RPC_TYPES,
+  JWT_SECRET_KEY: process.env.JWT_SECRET_KEY,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY
 };

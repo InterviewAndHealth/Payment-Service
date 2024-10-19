@@ -13,93 +13,93 @@ const {
   TEST_RPC,
 } = require("../config");
 
+const {STRIPE_SECRET_KEY} = require('../config');
+const stripe = require("stripe")(STRIPE_SECRET_KEY);
+
 // Service will contain all the business logic
 class Service {
+
+
   constructor() {
     this.repository = new Repository();
   }
 
-  // Login method will be used to authenticate the user
-  async login(email, password) {
-    const user = await this.repository.getUser(email);
 
-    if (!user) throw new NotFoundError("User not found");
 
-    if (!(await bcrypt.compare(password, user.password)))
-      throw new BadRequestError("Invalid password");
-
-    EventService.publish(TEST_QUEUE, {
-      type: EVENT_TYPES.USER_LOGGED_IN,
-      data: {
-        userId: user.public_id,
-        email: user.email,
-      },
+  async createCheckoutSession(product, successUrl, cancelUrl) {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: product.currency,
+            product_data: {
+              name: product.name,
+            },
+            unit_amount: product.price * 100,
+          },
+          quantity: product.quantity,
+        },
+      ],
+      mode: "payment",
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     });
-
-    return {
-      message: "Login successful",
-      user: {
-        id: user.public_id,
-        email: user.email,
-        name: user.name,
-        created_at: user.created_at,
-      },
-    };
+  
+    return { id: session.id };
   }
 
-  // Register method will be used to create a new user
-  async register(email, password, name) {
-    const user = await this.repository.getUser(email);
-    if (user) throw new BadRequestError("User already exists");
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await this.repository.createUser(
-      email,
-      hashedPassword,
-      name
-    );
 
-    EventService.publish(TEST_QUEUE, {
-      type: EVENT_TYPES.USER_CREATED,
-      data: {
-        userId: newUser.public_id,
-        email: newUser.email,
-      },
-    });
+  // services/interviewService.js
 
-    return {
-      message: "User created successfully",
-      user: {
-        id: newUser.public_id,
-        email: newUser.email,
-        name: newUser.name,
-        created_at: newUser.created_at,
-      },
-    };
-  }
+async addInterview(user_id) {
+  const existing = await repository.getInterviewByUserId(user_id);
 
-  async rpc_test() {
-    const data = await RPCService.request(TEST_RPC, {
-      type: TEST_RPC,
-      data: "Requesting data",
-    });
-
-    if (!data) throw new InternalServerError("Failed to get data");
-
-    return data;
-  }
-
-  static async handleEvent(data) {
-    console.log(data);
-  }
-
-  static async respondRPC(data) {
-    console.log(data);
-    return { data: "This is a response of rpc" };
+  if (existing.length === 0) {
+    // No record, create one
+    const result = await repository.createInterviewAvailability(user_id, 1);
+    return { message: "Interview availability created", interview: result };
+  } else {
+    // Increment interviews_available
+    const result = await repository.incrementInterviewAvailability(user_id);
+    return { message: "Interview availability incremented", interview: result };
   }
 }
 
-EventService.subscribe(SERVICE_QUEUE, Service);
-RPCService.respond(Service);
+async reduceInterview(user_id) {
+  const existing = await repository.getInterviewByUserId(user_id);
+
+  if (existing.length === 0) {
+    throw new Error("No interview availability, user needs to pay first");
+  }
+
+  const interview = existing[0];
+  if (interview.interviews_available > 1) {
+    // Decrement interviews_available
+    const result = await repository.decrementInterviewAvailability(user_id);
+    return { message: "Interview availability decremented", interview: result };
+  } else {
+    // Delete the record
+    await repository.deleteInterviewAvailability(user_id);
+    return { message: "Interview availability exhausted, record deleted" };
+  }
+}
+
+async getInterview(user_id) {
+  const existing = await repository.getInterviewByUserId(user_id);
+
+  if (existing.length === 0) {
+    return { message: "No interview availability", available: 0 };
+  } else {
+    return { message: "Interview availability found", available: existing[0].interviews_available };
+  }
+}
+
+
+}
+
+// EventService.subscribe(SERVICE_QUEUE, Service);
+// RPCService.respond(Service);
 
 module.exports = Service;

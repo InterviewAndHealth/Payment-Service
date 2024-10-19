@@ -54,21 +54,21 @@ class Service {
   // services/interviewService.js
 
 async addInterview(user_id) {
-  const existing = await repository.getInterviewByUserId(user_id);
+  const existing = await this.repository.getInterviewByUserId(user_id);
 
   if (existing.length === 0) {
     // No record, create one
-    const result = await repository.createInterviewAvailability(user_id, 1);
+    const result = await this.repository.createInterviewAvailability(user_id, 1);
     return { message: "Interview availability created", interview: result };
   } else {
     // Increment interviews_available
-    const result = await repository.incrementInterviewAvailability(user_id);
+    const result = await this.repository.incrementInterviewAvailability(user_id);
     return { message: "Interview availability incremented", interview: result };
   }
 }
 
 async reduceInterview(user_id) {
-  const existing = await repository.getInterviewByUserId(user_id);
+  const existing = await this.repository.getInterviewByUserId(user_id);
 
   if (existing.length === 0) {
     throw new Error("No interview availability, user needs to pay first");
@@ -77,17 +77,17 @@ async reduceInterview(user_id) {
   const interview = existing[0];
   if (interview.interviews_available > 1) {
     // Decrement interviews_available
-    const result = await repository.decrementInterviewAvailability(user_id);
+    const result = await this.repository.decrementInterviewAvailability(user_id);
     return { message: "Interview availability decremented", interview: result };
   } else {
     // Delete the record
-    await repository.deleteInterviewAvailability(user_id);
+    await this.repository.deleteInterviewAvailability(user_id);
     return { message: "Interview availability exhausted, record deleted" };
   }
 }
 
 async getInterview(user_id) {
-  const existing = await repository.getInterviewByUserId(user_id);
+  const existing = await this.repository.getInterviewByUserId(user_id);
 
   if (existing.length === 0) {
     return { message: "No interview availability", available: 0 };

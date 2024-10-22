@@ -1,10 +1,13 @@
 CREATE TABLE IF NOT EXISTS payments (  
-    transaction_id VARCHAR(255) NOT NULL,
-    user_id INT NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL,
-    payment_method VARCHAR(50) NOT NULL,
-    payment_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    user_id VARCHAR(255) NOT NULL,
+    session_id VARCHAR(255) NOT NULL,
+    paymentintent_id VARCHAR(255) NOT NULL,
+    amount_total DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    payment_method_types VARCHAR(50) NOT NULL,
+    customer_email VARCHAR(255) NOT NULL,
+    timestamp TIMESTAMP ,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-    PRIMARY KEY (transaction_id)
 );
     

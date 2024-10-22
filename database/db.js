@@ -39,6 +39,7 @@ class DB {
 
       this.paymentsTable();
       this.interviewAvailabilityTable();
+      this.sessionsTable();
     }
     return this.#pool.connect();
   }
@@ -56,6 +57,13 @@ class DB {
 
   static async interviewAvailabilityTable() {
     const pathToSQL = path.join(__dirname, "queries", "interview_availability.sql");
+    const rawQuery = fs.readFileSync(pathToSQL).toString();
+    const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ");
+    return this.#pool.query(query);
+  }
+
+  static async sessionsTable() {
+    const pathToSQL = path.join(__dirname, "queries", "sessions.sql");
     const rawQuery = fs.readFileSync(pathToSQL).toString();
     const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ");
     return this.#pool.query(query);

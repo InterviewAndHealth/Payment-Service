@@ -4,6 +4,7 @@ const {
   NotFoundError,
   BadRequestError,
   InternalServerError,
+  UnauthorizedError
 } = require("../utils/errors");
 const { EventService, RPCService } = require("./broker");
 const {
@@ -13,7 +14,7 @@ const {
   TEST_RPC,
 } = require("../config");
 
-const {STRIPE_SECRET_KEY} = require('../config');
+const {STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET} = require('../config');
 const stripe = require("stripe")(STRIPE_SECRET_KEY);
 
 // Service will contain all the business logic
@@ -23,6 +24,10 @@ class Service {
   constructor() {
     this.repository = new Repository();
   }
+
+
+ 
+
 
 
 
@@ -42,11 +47,86 @@ class Service {
         },
       ],
       mode: "payment",
-      success_url: successUrl,
+      success_url:`${successUrl}+?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
     });
   
     return { id: session.id };
+  }
+
+  async addSessionInfo(session_id,user_id){
+    const result = await this.repository.addSession(session_id,user_id);
+    return { message: "Session Added successfully", session: result };
+  }
+
+
+
+
+  async webhookservice(sig,info){
+    let event;
+
+  // try {
+  //   event = stripe.webhooks.constructEvent(info, sig, STRIPE_WEBHOOK_SECRET);
+  // } catch (err) {
+  //   console.error('Webhook signature verification failed.', err);
+  //   return res.status(400).send(`Webhook Error: ${err.message}`);
+  // }
+
+  
+    event = stripe.webhooks.constructEvent(info, sig, STRIPE_WEBHOOK_SECRET);
+
+    if(!event){
+      throw new BadRequestError("Invalid Event");
+    }
+  
+  // Handle the event types you care about
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    // Extract important payment details from the session object
+    const paymentintent_id = session.payment_intent;
+    const amount_total = session.amount_total;
+    const currency = session.currency;
+    const payment_method_types = session.payment_method_types;
+    const customer_email = session.customer_details.email;
+    const timestamp = session.created;
+    const session_id = session.id;
+
+    const user_id=await this.repository.getUserBySessionId(session_id);
+
+    if (!user_id) {
+      throw new NotFoundError("User not found");
+    }
+
+    const response1= await this.repository.updateSession(session_id);
+
+
+    // Save the transaction details in your database
+    const result= await this.repository.addPayment(
+      user_id,
+      session_id,
+      paymentintent_id,
+      amount_total,
+      currency,
+      payment_method_types,
+      customer_email,
+      timestamp
+    );
+
+    const existing = await this.repository.getInterviewByUserId(user_id);
+
+  if (existing.length === 0) {
+    // No record, create one
+    const response2 = await this.repository.createInterviewAvailability(user_id, 1);
+    
+  } else {
+    // Increment interviews_available
+    const response3 = await this.repository.incrementInterviewAvailability(user_id);
+    
+  }
+
+    return true;
+  }
+
   }
 
 
@@ -71,7 +151,7 @@ async reduceInterview(user_id) {
   const existing = await this.repository.getInterviewByUserId(user_id);
 
   if (existing.length === 0) {
-    throw new Error("No interview availability, user needs to pay first");
+    throw new UnauthorizedError("No interview availability, user needs to pay first");
   }
 
   const interview = existing[0];

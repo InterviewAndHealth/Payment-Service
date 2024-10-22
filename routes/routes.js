@@ -19,14 +19,39 @@ router.get("/failure", (req, res) => {
 
 router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
   const { product, successUrl, cancelUrl } = req.body;
+  const user_id = req.userId
 
   if (!product || !successUrl || !cancelUrl) {
     throw new BadRequestError("Product, successUrl, and cancelUrl are required");
   }
 
   const data = await service.createCheckoutSession(product, successUrl, cancelUrl);
+
+  const session_id=data.id;
+
+  const response =await service.addSessionInfo(session_id,user_id);
   
-  return res.json({ id: data.id });
+  return res.status(201).json({ id: session_id});
+});
+
+
+
+
+
+
+
+
+
+
+const bodyParser = require('body-parser');
+app.post('/webhook', bodyParser.raw({ type: 'application/json' }), async(req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const info= req.body;
+
+  const data= await service.webhookservice(sig,info);
+  
+  // Respond to acknowledge receipt of the event
+  res.json({ received: data });
 });
 
 
@@ -53,7 +78,7 @@ router.post("/reduceinterview", authMiddleware, async (req, res) => {
  
 
   const data = await service.reduceInterview(user_id);
-  return res.json(data);
+  return res.status(200).json(data);
 });
 
 router.get("/getinterview", authMiddleware, async (req, res) => {
@@ -64,7 +89,7 @@ router.get("/getinterview", authMiddleware, async (req, res) => {
   }
 
   const data = await service.getInterview(user_id);
-  return res.json(data);
+  return res.status(200).json(data);
 });
 
 

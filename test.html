@@ -15,11 +15,11 @@
 
         async function createCheckoutSession() {
             try {
-                const response = await fetch("http://localhost:8005/createcheckoutsession", {
+                const response = await fetch("https://mock-interview-payment-backend.onrender.com/createcheckoutsession", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJrNjc1bHB6am4wOHIiLCJpYXQiOjE3MjkzMTAxMTgsImV4cCI6MTcyOTM5NjUxOH0.yt1H-TvmLG8gJO8ONW827aghEv0ab-yJYMVTgbYzjko" // Add the Authorization token here
+                        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJrNjc1bHB6am4wOHIiLCJpYXQiOjE3Mjk0MDIwNjQsImV4cCI6MTcyOTQ4ODQ2NH0.Y5umaQ574JZG5RfnCEMu0PtRi55j3hP2I2joBWrgz_w" // Add the Authorization token here
                     },
                     body: JSON.stringify({
                         product: {

@@ -97,7 +97,10 @@ class Service {
     const currency = session.currency;
     const payment_method_types = session.payment_method_types;
     const customer_email = session.customer_details.email;
-    const timestamp = session.created;
+    // const timestamp = session.created;
+
+    const timestamp = new Date(session.created * 1000); // Convert seconds to milliseconds
+
     const session_id = session.id;
 
     const user_id=await this.repository.getUserBySessionId(session_id);
@@ -121,6 +124,7 @@ class Service {
       customer_email,
       timestamp
     );
+    console.log("testing 123");
 
     const existing = await this.repository.getInterviewByUserId(user_id);
 

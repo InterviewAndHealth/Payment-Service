@@ -38,8 +38,12 @@ class DB {
       });
 
       this.paymentsTable();
+      console.log("abcd");
       this.interviewAvailabilityTable();
+      console.log("abcd123");
       this.sessionsTable();
+
+      console.log("pqrs");
     }
     return this.#pool.connect();
   }

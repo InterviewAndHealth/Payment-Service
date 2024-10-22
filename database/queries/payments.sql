@@ -8,6 +8,6 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_method_types VARCHAR(50) NOT NULL,
     customer_email VARCHAR(255) NOT NULL,
     timestamp TIMESTAMP ,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
     

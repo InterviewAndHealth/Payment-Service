@@ -46,8 +46,10 @@ router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
 const bodyParser = require('body-parser');
 
 router.post('/webhook', bodyParser.raw({ type: 'application/json' }), async(req, res) => {
+
   const sig = req.headers['stripe-signature'];
   const info= req.body;
+ 
 
   const data= await service.webhookservice(sig,info);
   

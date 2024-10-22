@@ -67,14 +67,22 @@ class Service {
 
   // try {
   //   event = stripe.webhooks.constructEvent(info, sig, STRIPE_WEBHOOK_SECRET);
+    
   // } catch (err) {
   //   console.error('Webhook signature verification failed.', err);
   //   return res.status(400).send(`Webhook Error: ${err.message}`);
   // }
 
+
   
-  
-    event = stripe.webhooks.constructEvent(info, sig, STRIPE_WEBHOOK_SECRET);
+    // event = await stripe.webhooks.constructEvent(info, sig, STRIPE_WEBHOOK_SECRET);
+
+    try {
+      event = await stripe.webhooks.constructEvent(info, sig, STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+      console.error('Webhook signature verification failed.', err);
+      throw new BadRequestError(`Webhook Error: ${err.message}`);
+    }
 
     if(!event){
       throw new BadRequestError("Invalid Event");
@@ -93,6 +101,7 @@ class Service {
     const session_id = session.id;
 
     const user_id=await this.repository.getUserBySessionId(session_id);
+    console.log(user_id);
 
     if (!user_id) {
       throw new NotFoundError("User not found");

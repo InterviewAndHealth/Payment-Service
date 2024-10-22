@@ -47,7 +47,7 @@ class Service {
         },
       ],
       mode: "payment",
-      success_url:`${successUrl}+?session_id={CHECKOUT_SESSION_ID}`,
+      success_url:successUrl,
       cancel_url: cancelUrl,
     });
   

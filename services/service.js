@@ -73,6 +73,7 @@ class Service {
   // }
 
   
+  
     event = stripe.webhooks.constructEvent(info, sig, STRIPE_WEBHOOK_SECRET);
 
     if(!event){

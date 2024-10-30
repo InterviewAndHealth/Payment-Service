@@ -23,5 +23,6 @@ tmp/
 docker/
 
 #env files
+# .gitignore
 .env
 .env.development

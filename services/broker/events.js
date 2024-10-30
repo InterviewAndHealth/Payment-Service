@@ -42,7 +42,12 @@ class EventService {
   static async subscribe(service, subscriber) {
     try {
       const channel = await Broker.channel();
-      const queue = await channel.assertQueue(SERVICE_QUEUE);
+      const queue = await channel.assertQueue(SERVICE_QUEUE, {
+        durable: true,
+        arguments: {
+          "x-queue-type": "quorum",
+        },
+      });
       channel.bindQueue(queue.queue, EXCHANGE_NAME, service);
       channel.consume(
         queue.queue,

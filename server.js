@@ -11,7 +11,7 @@ module.exports = async (app) => {
   // app.use(express.json());
 
   app.use((req, res, next) => {
-    if (req.originalUrl === '/webhook') {
+    if (req.originalUrl === "/webhook") {
       // Bypass JSON middleware for the /webhook route
       next();
     } else {

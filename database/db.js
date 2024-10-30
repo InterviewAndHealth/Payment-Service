@@ -1,9 +1,5 @@
 const { Pool } = require("pg");
-const {
-  DATABASE_NAME,
-  DATABASE_URL,
-  NODE_ENV,
-} = require("../config");
+const { DATABASE_NAME, DATABASE_URL } = require("../config");
 const path = require("path");
 const fs = require("fs");
 
@@ -30,7 +26,6 @@ class DB {
         ssl: false,
       });
 
-
       this.#pool.on("error", (err) => {
         console.error("Unexpected error on idle client", err);
         process.exit(-1);
@@ -42,12 +37,10 @@ class DB {
       });
 
       this.paymentsTable();
-      
-      this.interviewAvailabilityTable();
-   
-      this.sessionsTable();
 
-     
+      this.interviewAvailabilityTable();
+
+      this.sessionsTable();
     }
     return this.#pool.connect();
   }
@@ -64,7 +57,11 @@ class DB {
   }
 
   static async interviewAvailabilityTable() {
-    const pathToSQL = path.join(__dirname, "queries", "interview_availability.sql");
+    const pathToSQL = path.join(
+      __dirname,
+      "queries",
+      "interview_availability.sql"
+    );
     const rawQuery = fs.readFileSync(pathToSQL).toString();
     const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ");
     return this.#pool.query(query);

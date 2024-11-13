@@ -41,6 +41,10 @@ class DB {
       this.interviewAvailabilityTable();
 
       this.sessionsTable();
+
+      this.billingInfoTable();
+
+      this.packagesTable();
     }
     return this.#pool.connect();
   }
@@ -69,6 +73,20 @@ class DB {
 
   static async sessionsTable() {
     const pathToSQL = path.join(__dirname, "queries", "sessions.sql");
+    const rawQuery = fs.readFileSync(pathToSQL).toString();
+    const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ");
+    return this.#pool.query(query);
+  }
+
+  static async billingInfoTable() {
+    const pathToSQL = path.join(__dirname, "queries", "billing_info.sql");
+    const rawQuery = fs.readFileSync(pathToSQL).toString();
+    const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ");
+    return this.#pool.query(query);
+  }
+
+  static async packagesTable() {
+    const pathToSQL = path.join(__dirname, "queries", "packages.sql");
     const rawQuery = fs.readFileSync(pathToSQL).toString();
     const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ");
     return this.#pool.query(query);

@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS billing_info (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    billingAddress1 VARCHAR(255) NOT NULL,
+    billingAddress2 VARCHAR(255) NOT NULL,
+    billingTo VARCHAR(255) NOT NULL,
+    companyName VARCHAR(255) NOT NULL,
+    promoCode VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+);

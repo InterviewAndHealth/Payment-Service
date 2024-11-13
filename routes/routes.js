@@ -18,7 +18,7 @@ router.get("/failure", (req, res) => {
 });
 
 router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
-  const { product, successUrl, cancelUrl } = req.body;
+  const { product, successUrl, cancelUrl, number_of_interviews } = req.body;
   const user_id = req.userId;
 
   if (!product || !successUrl || !cancelUrl) {
@@ -30,14 +30,26 @@ router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
   const data = await service.createCheckoutSession(
     product,
     successUrl,
-    cancelUrl
+    cancelUrl,
+    number_of_interviews
   );
 
   const session_id = data.id;
 
   const response = await service.addSessionInfo(session_id, user_id);
+  console.log("first", response)
 
   return res.status(201).json({ id: session_id });
+});
+
+router.post("/billings", authMiddleware, async (req, res) => {
+  const billingData = {
+    user_id: 256,
+    ...req.body
+  };
+  
+  const billing = await service.saveBillingInfo(billingData);
+  res.status(201).json({message: "Billing saved successfully", data: billing});
 });
 
 const bodyParser = require("body-parser");
@@ -48,6 +60,7 @@ router.post(
   async (req, res) => {
     const sig = req.headers["stripe-signature"];
     const info = req.body;
+    console.log("Body", info)
 
     const data = await service.webhookservice(sig, info);
 
@@ -82,6 +95,21 @@ router.get("/getinterview", authMiddleware, async (req, res) => {
   }
 
   const data = await service.getInterview(user_id);
+  return res.status(200).json(data);
+});
+
+router.get("/packages", async (req, res) => {
+  console.log(req.user)
+  const country = req.user?.country || "US";
+  const { package_type } = req.query;
+
+  const data = await service.getPackages(package_type, country);
+  return res.status(200).json(data);
+});
+
+router.get("/packages/:id", async (req, res) => {
+  const id = req.params.id;
+  const data = await service.getPackagesById(id);
   return res.status(200).json(data);
 });
 

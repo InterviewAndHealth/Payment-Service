@@ -18,6 +18,7 @@ module.exports = async (req, res, next) => {
       throw new Error("Invalid Authentication token");
     }
     req.userId = decodedToken.sub;
+    req.country = decodedToken.country;
     next();
   } catch (error) {
     throw new UnauthorizedError(error.message);

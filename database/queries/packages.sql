@@ -8,22 +8,33 @@ CREATE TABLE IF NOT EXISTS packages (
     features TEXT[]
 );
 
-INSERT INTO packages (package_type, number_of_interviews, country, currency, price, features)
-VALUES
-    ('MOCK_INTERVIEW', 1, 'INDIA', 'INR', 349, ARRAY['AI screening', 'One mock interview']),
-    ('MOCK_INTERVIEW', 1, 'UK', 'GBP', 399, ARRAY['AI screening', 'One mock interview']),
-    ('MOCK_INTERVIEW', 1, 'US', 'USD', 399, ARRAY['AI screening', 'One mock interview']);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM packages) THEN
+        INSERT INTO packages (package_type, number_of_interviews, country, currency, price, features)
+        VALUES
+            ('USER', 1, 'INDIA', 'INR', 349, ARRAY['AI screening', '1 mock interview']),
+            ('USER', 1, 'UK', 'GBP', 399, ARRAY['AI screening', '1 mock interview']),
+            ('USER', 1, 'US', 'USD', 399, ARRAY['AI screening', '1 mock interview']),
 
-INSERT INTO packages (package_type, number_of_interviews, country, currency, price, features)
-VALUES
-    ('CORPORATE_INTERVIEW', 10, 'INDIA', 'INR', 9999, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
-    ('CORPORATE_INTERVIEW', 10, 'UK', 'GBP', 99, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
-    ('CORPORATE_INTERVIEW', 10, 'US', 'USD', 129, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+            ('USER', 5, 'INDIA', 'INR', 999, ARRAY['AI screening', '5 mock interview']),
+            ('USER', 5, 'UK', 'GBP', 999, ARRAY['AI screening', '5 mock interview']),
+            ('USER', 5, 'US', 'USD', 999, ARRAY['AI screening', '5 mock interview']),
 
-    ('CORPORATE_INTERVIEW', 20, 'INDIA', 'INR', 16999, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
-    ('CORPORATE_INTERVIEW', 20, 'UK', 'GBP', 169, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
-    ('CORPORATE_INTERVIEW', 20, 'US', 'USD', 199, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+            ('USER', 10, 'INDIA', 'INR', 1999, ARRAY['AI screening', '10 mock interview']),
+            ('USER', 10, 'UK', 'GBP', 1999, ARRAY['AI screening', '10 mock interview']),
+            ('USER', 10, 'US', 'USD', 1999, ARRAY['AI screening', '10 mock interview']),
 
-    ('CORPORATE_INTERVIEW', 50, 'INDIA', 'INR', 34999, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
-    ('CORPORATE_INTERVIEW', 50, 'UK', 'GBP', 349, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
-    ('CORPORATE_INTERVIEW', 50, 'US', 'USD', 399, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']);
+            ('CORPORATE', 10, 'INDIA', 'INR', 9999, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+            ('CORPORATE', 10, 'UK', 'GBP', 99, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+            ('CORPORATE', 10, 'US', 'USD', 129, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+
+            ('CORPORATE', 20, 'INDIA', 'INR', 16999, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+            ('CORPORATE', 20, 'UK', 'GBP', 169, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+            ('CORPORATE', 20, 'US', 'USD', 199, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+
+            ('CORPORATE', 50, 'INDIA', 'INR', 34999, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+            ('CORPORATE', 50, 'UK', 'GBP', 349, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
+            ('CORPORATE', 50, 'US', 'USD', 399, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']);
+    END IF;
+END $$;

@@ -21,10 +21,10 @@ class Repository {
     return result.rows[0];
   }
 
-  async incrementInterviewAvailability(user_id) {
+  async incrementInterviewAvailability(user_id, interviews_available) {
     const result = await DB.query({
-      text: `UPDATE interview_availability SET interviews_available = interviews_available + 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *`,
-      values: [user_id],
+      text: `UPDATE interview_availability SET interviews_available = interviews_available + $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *`,
+      values: [user_id, interviews_available],
     });
     return result.rows[0];
   }
@@ -90,6 +90,55 @@ class Repository {
         customer_email,
         timestamp,
       ],
+    });
+    return result.rows[0];
+  }
+
+  async addBillingInfo(billingData) {
+    const result = await DB.query({
+      text: `INSERT INTO billing_info 
+      (user_id,billingAddress1,billingAddress2,billingTo,companyName,promoCode)
+      VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      values: [
+        billingData.user_id,
+        billingData.billingAddress1,
+        billingData.billingAddress2,
+        billingData.billingTo,
+        billingData.companyName,
+        billingData.promoCode,
+      ]
+    });
+    return result.rows[0];
+  }
+
+  async getPackages(package_type, country){
+    let result = await DB.query({
+      text:  `
+      SELECT *
+      FROM packages
+      WHERE package_type = $1 AND country = $2
+    `,
+    values: [package_type.toUpperCase(), country.toUpperCase()]
+    });
+    
+    if(result.rows.length === 0){
+      result = await DB.query({
+        text:  `
+        SELECT *
+        FROM packages
+        WHERE package_type = $1 AND country = $2
+      `,
+      values: [package_type.toUpperCase(), country.toUpperCase()]
+      });
+    }
+    
+    return result.rows;
+  }
+
+  async getPackagesById(id){
+    const result = await DB.query({
+      text: `SELECT * FROM packages WHERE id = $1`,
+      values: [id],
     });
     return result.rows[0];
   }

@@ -14,16 +14,16 @@ BEGIN
         INSERT INTO packages (package_type, number_of_interviews, country, currency, price, features)
         VALUES
             ('USER', 1, 'INDIA', 'INR', 349, ARRAY['AI screening', '1 mock interview']),
-            ('USER', 1, 'UK', 'GBP', 399, ARRAY['AI screening', '1 mock interview']),
-            ('USER', 1, 'US', 'USD', 399, ARRAY['AI screening', '1 mock interview']),
+            ('USER', 1, 'UK', 'GBP', 3.99, ARRAY['AI screening', '1 mock interview']),
+            ('USER', 1, 'US', 'USD', 3.99, ARRAY['AI screening', '1 mock interview']),
 
-            ('USER', 5, 'INDIA', 'INR', 999, ARRAY['AI screening', '5 mock interview']),
-            ('USER', 5, 'UK', 'GBP', 999, ARRAY['AI screening', '5 mock interview']),
-            ('USER', 5, 'US', 'USD', 999, ARRAY['AI screening', '5 mock interview']),
+            ('USER', 5, 'INDIA', 'INR', 1399, ARRAY['AI screening', '5 mock interview']),
+            ('USER', 5, 'UK', 'GBP', 16.99, ARRAY['AI screening', '5 mock interview']),
+            ('USER', 5, 'US', 'USD', 16.99, ARRAY['AI screening', '5 mock interview']),
 
-            ('USER', 10, 'INDIA', 'INR', 1999, ARRAY['AI screening', '10 mock interview']),
-            ('USER', 10, 'UK', 'GBP', 1999, ARRAY['AI screening', '10 mock interview']),
-            ('USER', 10, 'US', 'USD', 1999, ARRAY['AI screening', '10 mock interview']),
+            ('USER', 10, 'INDIA', 'INR', 2499, ARRAY['AI screening', '10 mock interview']),
+            ('USER', 10, 'UK', 'GBP', 24.99, ARRAY['AI screening', '10 mock interview']),
+            ('USER', 10, 'US', 'USD', 24.99, ARRAY['AI screening', '10 mock interview']),
 
             ('CORPORATE', 10, 'INDIA', 'INR', 9999, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),
             ('CORPORATE', 10, 'UK', 'GBP', 99, ARRAY['Sponsored listing', 'AI Screening of candidates', 'AI Interview of candidates']),

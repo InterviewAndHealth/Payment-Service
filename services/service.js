@@ -42,7 +42,6 @@ class Service {
       success_url: successUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
-      //customer_email: "saifmd9536@gmail.com",
     })
 
     return { id: session.id }

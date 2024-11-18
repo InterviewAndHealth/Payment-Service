@@ -22,4 +22,5 @@ module.exports = {
   JWT_SECRET_KEY: process.env.JWT_SECRET_KEY,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  IPAPI_API_URL: process.env.IPAPI_API_URL,
 };

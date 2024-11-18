@@ -4,6 +4,8 @@ const { BadRequestError } = require("../utils/errors")
 const authMiddleware = require("../middlewares/auth")
 const router = express.Router()
 const service = new Service()
+const axios = require("axios")
+const { IPAPI_API_URL } = require("../config")
 
 router.get("/", (req, res) => {
   res.json({ message: "Welcome to the Payment Service" })
@@ -97,8 +99,19 @@ router.get("/getinterview", authMiddleware, async (req, res) => {
 })
 
 router.get("/packages", authMiddleware, async (req, res) => {
-  const country = req?.country || "US"
-  const package_type = req?.role || "user"
+  const response = await axios.get(IPAPI_API_URL, {
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": "nodejs-ipapi-v1.02",
+    },
+  })
+
+  if (response.status !== 200) {
+    throw new BadRequestError("Failed to get location")
+  }
+
+  const country = response?.data?.country_name || "US"
+  const package_type = req?.role
 
   const data = await service.getPackages(package_type, country)
   return res.status(200).json(data)

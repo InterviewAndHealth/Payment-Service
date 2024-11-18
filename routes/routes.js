@@ -99,18 +99,9 @@ router.get("/getinterview", authMiddleware, async (req, res) => {
 })
 
 router.get("/packages", authMiddleware, async (req, res) => {
-  const response = await axios.get(IPAPI_API_URL, {
-    headers: {
-      "Content-Type": "application/json",
-      "User-Agent": "nodejs-ipapi-v1.02",
-    },
-  })
+  const {country_name} = req.query
 
-  if (response.status !== 200) {
-    throw new BadRequestError("Failed to get location")
-  }
-
-  const country = response?.data?.country_name || "US"
+  const country = country_name || "US"
   const package_type = req?.role
 
   const data = await service.getPackages(package_type, country)

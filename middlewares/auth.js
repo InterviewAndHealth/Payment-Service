@@ -19,7 +19,7 @@ module.exports = async (req, res, next) => {
       throw new Error("Invalid Authentication token")
     }
     req.userId = decodedToken.sub
-    res.role = decodedToken.role
+    req.role = decodedToken.role
     next()
   } catch (error) {
     throw new UnauthorizedError(error.message)

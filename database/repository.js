@@ -112,25 +112,31 @@ class Repository {
   }
 
   async getPackages(package_type, country){
+    let usertype;
+    if(package_type=='student'){
+      usertype = 'USER';
+    }else{
+      usertype = 'CORPORATE';
+    }
     let result = await DB.query({
       text:  `
       SELECT *
       FROM packages
       WHERE package_type = $1 AND country = $2
     `,
-    values: [package_type.toUpperCase(), country.toUpperCase()]
+    values: [usertype.toUpperCase(), country.toUpperCase()]
     });
     
-    if(result.rows.length === 0){
-      result = await DB.query({
-        text:  `
-        SELECT *
-        FROM packages
-        WHERE package_type = $1 AND country = $2
-      `,
-      values: [package_type.toUpperCase(), country.toUpperCase()]
-      });
-    }
+    // if(result.rows.length === 0){
+    //   result = await DB.query({
+    //     text:  `
+    //     SELECT *
+    //     FROM packages
+    //     WHERE package_type = $1 AND country = $2
+    //   `,
+    //   values: [package_type.toUpperCase(), country.toUpperCase()]
+    //   });
+    // }
     
     return result.rows;
   }

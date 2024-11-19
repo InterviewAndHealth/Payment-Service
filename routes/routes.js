@@ -4,8 +4,8 @@ const { BadRequestError } = require("../utils/errors")
 const authMiddleware = require("../middlewares/auth")
 const router = express.Router()
 const service = new Service()
-const axios = require("axios")
-const { IPAPI_API_URL } = require("../config")
+// const axios = require("axios")
+// const { IPAPI_API_URL } = require("../config")
 
 router.get("/", (req, res) => {
   res.json({ message: "Welcome to the Payment Service" })

@@ -221,7 +221,16 @@ class Service {
       throw new BadRequestError("package type is required.")
     }
 
-    const packages = await this.repository.getPackages(package_type, country)
+    let packages;
+
+    if(country=='India'){
+      const packages = await this.repository.getPackages(package_type,'INDIA')
+    }else if(country=='United Kingdom'){
+      const packages = await this.repository.getPackages(package_type,'UK')
+    }else{
+      const packages = await this.repository.getPackages(package_type,'US')
+    }
+
 
     return packages
   }

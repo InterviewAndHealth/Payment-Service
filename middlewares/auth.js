@@ -20,7 +20,6 @@ module.exports = async (req, res, next) => {
     }
     req.userId = decodedToken.sub
     res.role = decodedToken.role
-    req.country = decodedToken.country
     next()
   } catch (error) {
     throw new UnauthorizedError(error.message)

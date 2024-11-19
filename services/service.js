@@ -224,11 +224,11 @@ class Service {
     let packages;
 
     if(country=='India'){
-      const packages = await this.repository.getPackages(package_type,'INDIA')
+       packages = await this.repository.getPackages(package_type,'INDIA')
     }else if(country=='United Kingdom'){
-      const packages = await this.repository.getPackages(package_type,'UK')
+      packages = await this.repository.getPackages(package_type,'UK')
     }else{
-      const packages = await this.repository.getPackages(package_type,'US')
+      packages = await this.repository.getPackages(package_type,'US')
     }
 
 

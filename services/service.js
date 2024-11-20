@@ -85,7 +85,8 @@ class Service {
       const session = event.data.object
       console.log("session", session)
       // Extract important payment details from the session object
-      const paymentintent_id = session.payment_intent
+      // const paymentintent_id = session.payment_intent
+      const paymentintent_id = session.payment_intent || Math.ceil(Math.random() * 1e5)
       const amount_total = session.amount_total
       const currency = session.currency
       const payment_method_types = session.payment_method_types

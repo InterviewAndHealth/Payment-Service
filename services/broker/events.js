@@ -51,13 +51,14 @@ class EventService {
       channel.bindQueue(queue.queue, EXCHANGE_NAME, service);
       channel.consume(
         queue.queue,
-        (data) => {
+        async (data) => {
           if (data.content) {
             const message = JSON.parse(data.content.toString());
-            subscriber.handleEvent(message);
+            await subscriber.handleEvent(message);
+            channel.ack(data);
           }
         },
-        { noAck: true }
+        { noAck: false }
       );
     } catch (err) {
       console.log("Failed to subscribe to service");

@@ -20,7 +20,8 @@ router.get("/failure", (req, res) => {
 })
 
 router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
-  const { product, successUrl, cancelUrl, number_of_interviews } = req.body
+  const { product, successUrl, cancelUrl, number_of_interviews, promocode } =
+    req.body
   const user_id = req.userId
 
   if (!product || !successUrl || !cancelUrl) {
@@ -31,7 +32,9 @@ router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
     product,
     successUrl,
     cancelUrl,
-    number_of_interviews
+    number_of_interviews,
+    user_id,
+    promocode
   )
 
   const session_id = data.id
@@ -99,10 +102,12 @@ router.get("/getinterview", authMiddleware, async (req, res) => {
 })
 
 router.get("/packages", authMiddleware, async (req, res) => {
-  const {country_name} = req.query
+  const { country_name } = req.query
 
   const country = country_name || "US"
   const package_type = req?.role
+
+  console.log("first", package_type)
 
   const data = await service.getPackages(package_type, country)
   return res.status(200).json(data)
@@ -112,6 +117,16 @@ router.get("/packages/:id", authMiddleware, async (req, res) => {
   const id = req.params.id
   const data = await service.getPackagesById(id)
   return res.status(200).json(data)
+})
+
+router.post("/apply-promocode", authMiddleware, async (req, res) => {
+  const user_id = req.userId
+  const { promocode } = req.body
+
+  const data = await service.applyPromocode(promocode, user_id)
+  return res
+    .status(200)
+    .json({ message: "Promocode applied successfully", data })
 })
 
 router.get("/health", (req, res) => {

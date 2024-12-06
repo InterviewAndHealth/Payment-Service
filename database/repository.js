@@ -169,6 +169,91 @@ class Repository {
 
     return result.rows[0]
   }
+
+  async createReferral(user_id, referral_code) {
+    const result = await DB.query({
+      text: `INSERT INTO user_referrals (user_id, referral_code) VALUES ($1, $2) RETURNING *`,
+      values: [user_id, referral_code],
+    })
+
+    return result.rows[0]
+  }
+
+  async getReferrer(referral_code) {
+    const result = await DB.query({
+      text: `SELECT * FROM user_referrals WHERE referral_code = $1`,
+      values: [referral_code],
+    })
+
+    return result.rows[0]
+  }
+
+  async updateTotalReferrals(user_id) {
+    const result = await DB.query({
+      text: `UPDATE user_referrals SET total_referrals = total_referrals + 1 WHERE user_id = $1`,
+      values: [user_id],
+    })
+
+    return result.rows[0]
+  }
+
+  async getTotalReferrals(user_id) {
+    const result =  await DB.query({
+      text: `SELECT * FROM user_referrals WHERE user_id = $1`,
+      values: [user_id],
+    })
+
+    return result.rows[0]
+  }
+
+  async createPromoCode(code, discount_percent, expiration_date) {
+    const result = await DB.query({
+      text: `INSERT INTO promo_codes (code, discount_percent, expiration_date) VALUES ($1, $2, $3) RETURNING *`,
+      values: [
+        code,
+        discount_percent,
+        expiration_date,
+      ],
+    })
+
+    return result.rows[0]
+  }
+
+  async updatePromoCode(code, discount_percent, expiration_date, promo_code_id) {
+    const result = await DB.query({
+      text: `UPDATE promo_codes SET code = $1, discount_percent = $2, expiration_date = $3 WHERE id = $4 RETURNING *`,
+      values: [
+        code,
+        discount_percent,
+        expiration_date,
+        promo_code_id
+      ],
+    })
+
+    return result.rows[0]
+  }
+
+  async assignPromoCode(promo_code_id, user_id) {
+    const result = await DB.query({
+      text: `UPDATE user_referrals SET promo_code_id = $1 WHERE user_id = $2`,
+      values: [promo_code_id, user_id],
+    })
+
+    return result.rows[0]
+  }
+
+  async getReferral(user_id) {
+    const result = await DB.query({
+      text: `SELECT user_referrals.*, promo_codes.code 
+              FROM user_referrals 
+              INNER JOIN promo_codes 
+              ON user_referrals.promo_code_id = promo_codes.id 
+              WHERE user_referrals.user_id = $1`,
+      values: [user_id],
+    })
+
+    return result.rows[0]
+  }
 }
 
 module.exports = Repository

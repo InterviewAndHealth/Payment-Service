@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS packages (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     package_type VARCHAR(20),
     number_of_interviews INT,
     country VARCHAR(50),

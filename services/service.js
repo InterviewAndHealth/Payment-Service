@@ -1,4 +1,4 @@
-const { Repository } = require("../database")
+const { Repository, DB } = require("../database")
 const {
   NotFoundError,
   BadRequestError,
@@ -286,6 +286,95 @@ class Service {
       user_id
     )
     return result
+  }
+
+  // Generate unique referral code
+  generateReferralCode = () => {
+    return Math.random().toString(36).substring(2, 10).toUpperCase()
+  }
+
+  async referral(user_id, referral_code) {
+    const createReferral = await DB.query({
+      text: `INSERT INTO user_referrals (user_id, referral_code) VALUES ($1, $2) RETURNING *`,
+      values: [user_id, this.generateReferralCode()],
+    })
+
+    if (referral_code) {
+      const referrer = await DB.query({
+        text: `SELECT * FROM user_referrals WHERE referral_code = $1`,
+        values: [referral_code],
+      })
+
+      if (referrer.rows.length > 0) {
+        // Update referrer's total referrals
+        await DB.query({
+          text: `UPDATE user_referrals SET total_referrals = total_referrals + 1 WHERE user_id = $1`,
+          values: [referrer.rows[0].user_id],
+        })
+
+        // Check if referrer should get new discount coupon (every 3 referrals)
+        const referral = await DB.query({
+          text: `SELECT * FROM user_referrals WHERE user_id = $1`,
+          values: [referrer.rows[0].user_id],
+        })
+
+        if (referral.rows[0].total_referrals % 3 === 0) {
+          const discount_percent = Math.min(
+            Math.floor(referral.rows[0].total_referrals / 3) * 10,
+            50
+          )
+
+          let promo_code = null
+          const expiration_date = new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ) // 30 days
+
+          if (referral.rows[0].promo_code_id === null) {
+            // Create new promo code
+            promo_code = await DB.query({
+              text: `INSERT INTO promo_codes (code, discount_percent, expiration_date) VALUES ($1, $2, $3) RETURNING *`,
+              values: [
+                this.generateReferralCode(),
+                discount_percent,
+                expiration_date,
+              ],
+            })
+          } else {
+            // Update promo code
+            promo_code = await DB.query({
+              text: `UPDATE promo_codes SET code = $1, discount_percent = $2, expiration_date = $3 WHERE id = $4 RETURNING *`,
+              values: [
+                this.generateReferralCode(),
+                discount_percent,
+                expiration_date,
+                referral.rows[0].promo_code_id,
+              ],
+            })
+          }
+
+          // Assign promo code to referrer
+          await DB.query({
+            text: `UPDATE user_referrals SET promo_code_id = $1 WHERE user_id = $2`,
+            values: [promo_code.rows[0].id, referrer.rows[0].user_id],
+          })
+        }
+      }
+
+      return createReferral
+    }
+  }
+
+  async getReferral(user_id) {
+    const result = await DB.query({
+      text: `SELECT user_referrals.*, promo_codes.code 
+              FROM user_referrals 
+              INNER JOIN promo_codes 
+              ON user_referrals.promo_code_id = promo_codes.id 
+              WHERE user_referrals.user_id = $1`,
+      values: [user_id],
+    })
+
+    return result.rows[0]
   }
 }
 

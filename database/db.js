@@ -60,6 +60,8 @@ class DB {
       this.promoCodesTable()
 
       this.promoCodeUsageTable()
+
+      this.userReferralTable()
     }
     return this.#pool.connect()
   }
@@ -116,6 +118,13 @@ class DB {
 
   static async promoCodeUsageTable() {
     const pathToSQL = path.join(__dirname, "queries", "promo_code_usage.sql")
+    const rawQuery = fs.readFileSync(pathToSQL).toString()
+    const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ")
+    return this.#pool.query(query)
+  }
+
+  static async userReferralTable() {
+    const pathToSQL = path.join(__dirname, "queries", "user_referrals.sql")
     const rawQuery = fs.readFileSync(pathToSQL).toString()
     const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ")
     return this.#pool.query(query)

@@ -45,7 +45,7 @@ router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
   return res.status(201).json({ id: session_id })
 })
 
-router.post("/billings", async (req, res) => {
+router.post("/billings", authMiddleware, async (req, res) => {
   const billingData = {
     user_id: req.userId,
     ...req.body,
@@ -127,6 +127,24 @@ router.post("/apply-promocode", authMiddleware, async (req, res) => {
   return res
     .status(200)
     .json({ message: "Promocode applied successfully", data })
+})
+
+router.post("/referral", authMiddleware, async (req, res) => {
+  const user_id = req.userId
+  const { referral_code } = req.body
+
+  const data = await service.referral(user_id, referral_code)
+  return res.status(200).json({ message: "Successfully", data })
+})
+
+router.get("/get-referral", authMiddleware, async (req, res) => {
+  const user_id = req.userId
+
+  const data = await service.getReferral(user_id)
+  console.log(data)
+  return res
+    .status(200)
+    .json({ message: "Referral code fetched successfully", ...data })
 })
 
 router.get("/health", (req, res) => {

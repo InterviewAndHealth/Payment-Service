@@ -4,7 +4,7 @@ const cors = require("cors");
 const error = require("./middlewares/error");
 const routes = require("./routes/routes");
 const { DB } = require("./database");
-const { RPCAndEnentService } = require("./services/rpcandeventservice");
+const { RPCAndEventService } = require("./services/rpcandeventservice");
 const RPCService = require("./services/broker/rpc");
 const EventService = require("./services/broker/events");
 const { SERVICE_QUEUE } = require("./config/index");
@@ -26,7 +26,7 @@ module.exports = async (app) => {
   app.use(routes);
   app.use(error);
 
-  const rpcAndEventService = new RPCAndEnentService();
+  const rpcAndEventService = new RPCAndEventService();
   await RPCService.respond(rpcAndEventService);
   await EventService.subscribe(SERVICE_QUEUE, rpcAndEventService);
 };

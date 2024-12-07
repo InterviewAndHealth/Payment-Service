@@ -12,6 +12,7 @@ module.exports = async (req, res, next) => {
 
   try {
     const decodedToken = token.verifyToken(authToken)
+    console.log(decodedToken)
 
     if (!decodedToken) {
       throw new Error("Invalid Authentication token")

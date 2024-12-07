@@ -141,7 +141,6 @@ router.get("/get-referral", authMiddleware, async (req, res) => {
   const user_id = req.userId
 
   const data = await service.getReferral(user_id)
-  console.log(data)
   return res
     .status(200)
     .json({ message: "Referral code fetched successfully", ...data })

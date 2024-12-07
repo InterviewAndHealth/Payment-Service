@@ -246,7 +246,7 @@ class Repository {
     const result = await DB.query({
       text: `SELECT user_referrals.*, promo_codes.code 
               FROM user_referrals 
-              INNER JOIN promo_codes 
+              LEFT JOIN promo_codes 
               ON user_referrals.promo_code_id = promo_codes.id 
               WHERE user_referrals.user_id = $1`,
       values: [user_id],

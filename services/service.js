@@ -342,8 +342,7 @@ class Service {
   }
 
   async getReferral(user_id) {
-    const result = this.repository.getReferrer(user_id)
-
+    const result = await this.repository.getReferral(user_id)
     return result
   }
 }

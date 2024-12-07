@@ -1,4 +1,4 @@
-const { Repository } = require("../database")
+const { Repository, DB } = require("../database")
 const {
   NotFoundError,
   BadRequestError,
@@ -19,8 +19,27 @@ class Service {
     product,
     successUrl,
     cancelUrl,
-    number_of_interviews
+    number_of_interviews,
+    user_id,
+    promocode
   ) {
+    let finalPrice = product.price
+    let promocode_id = null
+
+    if (promocode) {
+      const discount = await this.applyPromocode(promocode, user_id)
+
+      promocode_id = discount.id
+
+      finalPrice = discount
+        ? product.price - (product.price * discount.discount_percent) / 100
+        : product.price
+
+      if (isNaN(finalPrice) || finalPrice <= 0) {
+        throw new BadRequestError("Something went wrong")
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -30,12 +49,13 @@ class Service {
             product_data: {
               name: product.name,
             },
-            unit_amount: product.price * 100,
+            unit_amount: Math.round(finalPrice * 100),
           },
           quantity: product.quantity,
         },
       ],
       metadata: {
+        promocode_id,
         number_of_interviews,
       },
       mode: "payment",
@@ -86,7 +106,8 @@ class Service {
       console.log("session", session)
       // Extract important payment details from the session object
       // const paymentintent_id = session.payment_intent
-      const paymentintent_id = session.payment_intent || Math.ceil(Math.random() * 1e5)
+      const paymentintent_id =
+        session.payment_intent || Math.ceil(Math.random() * 1e5)
       const amount_total = session.amount_total
       const currency = session.currency
       const payment_method_types = session.payment_method_types
@@ -118,6 +139,12 @@ class Service {
         timestamp
       )
       console.log("testing 123")
+
+      const promocode_id = session.metadata.promocode_id
+
+      if (promocode_id) {
+        await this.promoCodeUsed(promocode_id, user_id)
+      }
 
       const existing = await this.repository.getInterviewByUserId(user_id)
       const interview_availability = session.metadata.number_of_interviews
@@ -222,16 +249,7 @@ class Service {
       throw new BadRequestError("package type is required.")
     }
 
-    let packages;
-
-    if(country=='India'){
-       packages = await this.repository.getPackages(package_type,'INDIA')
-    }else if(country=='United Kingdom'){
-      packages = await this.repository.getPackages(package_type,'UK')
-    }else{
-      packages = await this.repository.getPackages(package_type,'US')
-    }
-
+    const packages = await this.repository.getPackages(package_type, country)
 
     return packages
   }
@@ -240,6 +258,92 @@ class Service {
     const packages = await this.repository.getPackagesById(id)
 
     return packages
+  }
+
+  async applyPromocode(promocode, user_id) {
+    const promocodeExists = await this.repository.checkPromoCodeExists(
+      promocode
+    )
+
+    if (!promocodeExists) {
+      throw new BadRequestError("Promocode does not exist.")
+    }
+
+    const promocodeUsage = await this.repository.checkPromoCodeUsage(
+      promocodeExists.id,
+      user_id
+    )
+    
+    if (promocodeUsage) {
+      throw new BadRequestError("Promocode already used.")
+    }
+    return promocodeExists
+  }
+
+  async promoCodeUsed(promocode_id, user_id) {
+    const result = await this.repository.addPromoCodeUsage(
+      promocode_id,
+      user_id
+    )
+    return result
+  }
+
+  // Generate unique referral code
+  generateReferralCode = () => {
+    return Math.random().toString(36).substring(2, 10).toUpperCase()
+  }
+
+  async referral(user_id, referral_code) {
+    const createReferral = await this.repository.createReferral(user_id, this.generateReferralCode())
+    if (referral_code) {
+      const referrer = await this.repository.getReferrer(referral_code)
+      if (referrer) {
+        // Update referrer's total referrals
+        await this.repository.updateTotalReferrals(referrer.user_id)
+
+        // Check if referrer should get new discount coupon (every 3 referrals)
+        const referral = await this.repository.getTotalReferrals(referrer.user_id)
+
+        if (referral.total_referrals % 3 === 0) {
+          const discount_percent = Math.min(
+            Math.floor(referral.total_referrals / 3) * 10,
+            50
+          )
+
+          let promo_code = null
+          const expiration_date = new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ) // 30 days
+
+          if (referral.promo_code_id === null) {
+            // Create new promo code
+            promo_code = await this.repository.createPromoCode(
+              this.generateReferralCode(),
+              discount_percent,
+              expiration_date
+            )
+          } else {
+            // Update promo code
+            promo_code = await this.repository.updatePromoCode(
+              this.generateReferralCode(),
+              discount_percent,
+              expiration_date,
+              referral.promo_code_id
+            )
+          }
+
+          // Assign promo code to referrer
+          await this.repository.assignPromoCode(promo_code.id, referrer.user_id)
+        }
+      }
+
+      return createReferral
+    }
+  }
+
+  async getReferral(user_id) {
+    const result = await this.repository.getReferral(user_id)
+    return result
   }
 }
 

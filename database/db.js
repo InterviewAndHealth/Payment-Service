@@ -56,6 +56,12 @@ class DB {
       this.billingInfoTable()
 
       this.packagesTable()
+
+      this.promoCodesTable()
+
+      this.promoCodeUsageTable()
+
+      this.userReferralTable()
     }
     return this.#pool.connect()
   }
@@ -98,6 +104,27 @@ class DB {
 
   static async packagesTable() {
     const pathToSQL = path.join(__dirname, "queries", "packages.sql")
+    const rawQuery = fs.readFileSync(pathToSQL).toString()
+    const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ")
+    return this.#pool.query(query)
+  }
+
+  static async promoCodesTable() {
+    const pathToSQL = path.join(__dirname, "queries", "promo_codes.sql")
+    const rawQuery = fs.readFileSync(pathToSQL).toString()
+    const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ")
+    return this.#pool.query(query)
+  }
+
+  static async promoCodeUsageTable() {
+    const pathToSQL = path.join(__dirname, "queries", "promo_code_usage.sql")
+    const rawQuery = fs.readFileSync(pathToSQL).toString()
+    const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ")
+    return this.#pool.query(query)
+  }
+
+  static async userReferralTable() {
+    const pathToSQL = path.join(__dirname, "queries", "user_referrals.sql")
     const rawQuery = fs.readFileSync(pathToSQL).toString()
     const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ")
     return this.#pool.query(query)

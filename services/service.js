@@ -273,7 +273,7 @@ class Service {
       promocodeExists.id,
       user_id
     )
-    
+
     if (promocodeUsage) {
       throw new BadRequestError("Promocode already used.")
     }
@@ -294,7 +294,10 @@ class Service {
   }
 
   async referral(user_id, referral_code) {
-    const createReferral = await this.repository.createReferral(user_id, this.generateReferralCode())
+    const createReferral = await this.repository.createReferral(
+      user_id,
+      this.generateReferralCode()
+    )
     if (referral_code) {
       const referrer = await this.repository.getReferrer(referral_code)
       if (referrer) {
@@ -302,7 +305,9 @@ class Service {
         await this.repository.updateTotalReferrals(referrer.user_id)
 
         // Check if referrer should get new discount coupon (every 3 referrals)
-        const referral = await this.repository.getTotalReferrals(referrer.user_id)
+        const referral = await this.repository.getTotalReferrals(
+          referrer.user_id
+        )
 
         if (referral.total_referrals % 3 === 0) {
           const discount_percent = Math.min(
@@ -342,7 +347,14 @@ class Service {
   }
 
   async getReferral(user_id) {
-    const result = await this.repository.getReferral(user_id)
+    let result = await this.repository.getReferral(user_id)
+    // If no record, create one
+    if (!result) {
+      result = await this.repository.createReferral(
+        user_id,
+        this.generateReferralCode()
+      )
+    }
     return result
   }
 }

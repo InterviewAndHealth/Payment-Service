@@ -4,8 +4,6 @@ const { BadRequestError } = require("../utils/errors")
 const authMiddleware = require("../middlewares/auth")
 const router = express.Router()
 const service = new Service()
-// const axios = require("axios")
-// const { IPAPI_API_URL } = require("../config")
 
 router.get("/", (req, res) => {
   res.json({ message: "Welcome to the Payment Service" })
@@ -127,14 +125,6 @@ router.post("/apply-promocode", authMiddleware, async (req, res) => {
   return res
     .status(200)
     .json({ message: "Promocode applied successfully", data })
-})
-
-router.post("/referral", authMiddleware, async (req, res) => {
-  const user_id = req.userId
-  const { referral_code } = req.body
-
-  const data = await service.referral(user_id, referral_code)
-  return res.status(200).json({ message: "Successfully", data })
 })
 
 router.get("/get-referral", authMiddleware, async (req, res) => {

@@ -20,7 +20,8 @@ router.get("/failure", (req, res) => {
 router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
   const { product, successUrl, cancelUrl, number_of_interviews, promocode } =
     req.body
-  const user_id = req.userId
+  const user_id = req?.userId
+  const role = req?.role
 
   if (!product || !successUrl || !cancelUrl) {
     throw new BadRequestError("Product, successUrl, and cancelUrl are required")
@@ -32,7 +33,8 @@ router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
     cancelUrl,
     number_of_interviews,
     user_id,
-    promocode
+    promocode,
+    role
   )
 
   const session_id = data.id
@@ -118,10 +120,11 @@ router.get("/packages/:id", authMiddleware, async (req, res) => {
 })
 
 router.post("/apply-promocode", authMiddleware, async (req, res) => {
-  const user_id = req.userId
+  const user_id = req?.userId
+  const role = req?.role
   const { promocode } = req.body
 
-  const data = await service.applyPromocode(promocode, user_id)
+  const data = await service.applyPromocode(promocode, user_id, role)
   return res
     .status(200)
     .json({ message: "Promocode applied successfully", data })

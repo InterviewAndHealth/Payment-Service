@@ -143,10 +143,10 @@ class Repository {
     return result.rows[0]
   }
 
-  async checkPromoCodeExists(promocode) {
+  async checkPromoCodeExists(promocode, role) {
     const result = await DB.query({
-      text: "SELECT * FROM promo_codes WHERE code = $1 AND is_active = TRUE AND expiration_date > NOW()",
-      values: [promocode],
+      text: "SELECT * FROM promo_codes WHERE code = $1 AND is_active = TRUE AND expiration_date > NOW() AND role = $2",
+      values: [promocode, role.toLowerCase()],
     })
 
     return result.rows[0]

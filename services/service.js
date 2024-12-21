@@ -21,13 +21,14 @@ class Service {
     cancelUrl,
     number_of_interviews,
     user_id,
-    promocode
+    promocode,
+    role
   ) {
     let finalPrice = product.price
     let promocode_id = null
 
     if (promocode) {
-      const discount = await this.applyPromocode(promocode, user_id)
+      const discount = await this.applyPromocode(promocode, user_id, role)
 
       promocode_id = discount.id
 
@@ -260,9 +261,10 @@ class Service {
     return packages
   }
 
-  async applyPromocode(promocode, user_id) {
+  async applyPromocode(promocode, user_id, role) {
     const promocodeExists = await this.repository.checkPromoCodeExists(
-      promocode
+      promocode,
+      role
     )
 
     if (!promocodeExists) {

@@ -21,6 +21,8 @@ BEGIN
         INSERT INTO promo_codes (code, discount_percent, role, expiration_date)
         VALUES
         ('3EUU6LNB', 50, 'student', '2026-01-01'),
-        ('EZSTAJ01', 50, 'recruiter', '2026-01-01');
+        ('EZSTAJ01', 50, 'recruiter', '2026-01-01'),
+        ('G8A5V27E', 100, 'student', '2026-01-01'),
+        ('L15XZFQG', 100, 'recruiter', '2026-01-01');
     END IF;
 END $$;

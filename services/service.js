@@ -36,7 +36,7 @@ class Service {
         ? product.price - (product.price * discount.discount_percent) / 100
         : product.price
 
-      if (isNaN(finalPrice) || finalPrice <= 0) {
+      if (isNaN(finalPrice) || finalPrice < 0) {
         throw new BadRequestError("Something went wrong")
       }
     }
@@ -295,7 +295,7 @@ class Service {
     return Math.random().toString(36).substring(2, 10).toUpperCase()
   }
 
-  async referral(user_id, referral_code) {
+  async referral(user_id, referral_code, role) {
     const createReferral = await this.repository.createReferral(
       user_id,
       this.generateReferralCode()
@@ -327,7 +327,8 @@ class Service {
             promo_code = await this.repository.createPromoCode(
               this.generateReferralCode(),
               discount_percent,
-              expiration_date
+              expiration_date,
+              role
             )
           } else {
             // Update promo code

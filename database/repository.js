@@ -198,7 +198,7 @@ class Repository {
   }
 
   async getTotalReferrals(user_id) {
-    const result =  await DB.query({
+    const result = await DB.query({
       text: `SELECT * FROM user_referrals WHERE user_id = $1`,
       values: [user_id],
     })
@@ -206,28 +206,24 @@ class Repository {
     return result.rows[0]
   }
 
-  async createPromoCode(code, discount_percent, expiration_date) {
+  async createPromoCode(code, discount_percent, expiration_date, role) {
     const result = await DB.query({
-      text: `INSERT INTO promo_codes (code, discount_percent, expiration_date) VALUES ($1, $2, $3) RETURNING *`,
-      values: [
-        code,
-        discount_percent,
-        expiration_date,
-      ],
+      text: `INSERT INTO promo_codes (code, discount_percent, expiration_date, role) VALUES ($1, $2, $3, $4) RETURNING *`,
+      values: [code, discount_percent, expiration_date, role],
     })
 
     return result.rows[0]
   }
 
-  async updatePromoCode(code, discount_percent, expiration_date, promo_code_id) {
+  async updatePromoCode(
+    code,
+    discount_percent,
+    expiration_date,
+    promo_code_id
+  ) {
     const result = await DB.query({
       text: `UPDATE promo_codes SET code = $1, discount_percent = $2, expiration_date = $3 WHERE id = $4 RETURNING *`,
-      values: [
-        code,
-        discount_percent,
-        expiration_date,
-        promo_code_id
-      ],
+      values: [code, discount_percent, expiration_date, promo_code_id],
     })
 
     return result.rows[0]

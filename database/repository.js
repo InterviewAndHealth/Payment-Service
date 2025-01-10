@@ -250,6 +250,23 @@ class Repository {
 
     return result.rows[0]
   }
+
+  async getInterviewAvailabilityByUserId(user_id) {
+    const result = await DB.query({
+      text: `SELECT * FROM interview_availability WHERE user_id = $1`,
+      values: [user_id],
+    })
+    return result.rows[0]
+  }
+
+
+  async decrementInterviewAvailabilityByUserId(user_id,number_of_interviews) {
+    const result = await DB.query({
+      text: `UPDATE interview_availability SET interviews_available = interviews_available - $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *`,
+      values: [user_id, number_of_interviews],
+    })
+    return result.rows[0]
+  }
 }
 
 module.exports = Repository

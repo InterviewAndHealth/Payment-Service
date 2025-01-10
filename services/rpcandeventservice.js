@@ -9,6 +9,21 @@ class RPCAndEventService {
 
   async respondRPC(request) {
     console.log("Request received", request)
+
+    if (request.type === "GET_RECRUITER_INTERVIEW_AVAILABLE") {
+      const { user_id } = request.data
+      const recruiter_data = await this.repository.getInterviewAvailabilityByUserId(user_id)
+
+      return { recruiter_data }
+    }else if(request.type === "DECREMENT_RECRUITER_INTERVIEW_AVAILABLE"){ 
+
+      const { user_id,number_of_interviews } = request.data
+
+      const recruiter_data = await this.repository.decrementInterviewAvailabilityByUserId(user_id,number_of_interviews)
+
+      return { result:recruiter_data }
+
+    }
   }
 
   async handleEvent(event) {

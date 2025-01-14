@@ -8,6 +8,7 @@ const { RPCAndEventService } = require("./services/rpcandeventservice");
 const RPCService = require("./services/broker/rpc");
 const EventService = require("./services/broker/events");
 const { SERVICE_QUEUE } = require("./config/index");
+const Broker = require("./services/broker/broker");
 
 module.exports = async (app) => {
   await DB.connect();
@@ -27,6 +28,7 @@ module.exports = async (app) => {
   app.use(error);
 
   const rpcAndEventService = new RPCAndEventService();
+  await Broker.connect();
   await RPCService.respond(rpcAndEventService);
   await EventService.subscribe(SERVICE_QUEUE, rpcAndEventService);
 };

@@ -104,10 +104,46 @@ router.get("/getinterview", authMiddleware, async (req, res) => {
 router.get("/packages", authMiddleware, async (req, res) => {
   const { country_name } = req.query
 
-  const country = country_name || "US"
+  const EUR_COUNTRY = [
+    "ITA",
+    "FRA",
+    "ESP",
+    "PRT",
+    "IRL",
+    "NLD",
+    "GRC",
+    "AUT",
+    "FIN",
+    "BEL",
+    "SVK",
+    "LTU",
+    "SVN",
+    "EST",
+    "MCO",
+    "MLT",
+    "MNE",
+    "LUX",
+    "CYP",
+    "KOS",
+    "VAT",
+    "MYT",
+    "LVA",
+    "AND",
+    "SMR",
+    "MTQ",
+    "REU",
+    "BL",
+    "NLD",
+    "BES",
+    "MAF",
+  ]
+
+  let country = country_name || "US"
   const package_type = req?.role
 
-  console.log("first", package_type)
+  if (EUR_COUNTRY.includes(country)) {
+    country = "DEU"
+  }
 
   const data = await service.getPackages(package_type, country)
   return res.status(200).json(data)

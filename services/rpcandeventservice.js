@@ -15,6 +15,8 @@ class RPCAndEventService {
       const recruiter_data =
         await this.repository.getInterviewAvailabilityByUserId(user_id);
 
+        console.log(recruiter_data);
+
       return { recruiter_data };
     } else if (request.type === "DECREMENT_RECRUITER_INTERVIEW_AVAILABLE") {
       const { user_id, number_of_interviews } = request.data;

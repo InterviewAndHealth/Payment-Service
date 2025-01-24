@@ -256,7 +256,7 @@ class Repository {
       text: `SELECT * FROM interview_availability WHERE user_id = $1`,
       values: [user_id],
     })
-    return result.rows[0]
+    return result.rows
   }
 
 

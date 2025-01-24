@@ -12,8 +12,7 @@ class RPCAndEventService {
 
     if (request.type === "GET_RECRUITER_INTERVIEW_AVAILABLE") {
       const { user_id } = request.data;
-      const recruiter_data =
-        await this.repository.getInterviewAvailabilityByUserId(user_id);
+      const recruiter_data =await this.repository.getInterviewAvailabilityByUserId(user_id);
 
         console.log(recruiter_data);
 
@@ -21,8 +20,7 @@ class RPCAndEventService {
     } else if (request.type === "DECREMENT_RECRUITER_INTERVIEW_AVAILABLE") {
       const { user_id, number_of_interviews } = request.data;
 
-      const recruiter_data =
-        await this.repository.decrementInterviewAvailabilityByUserId(
+      const recruiter_data =await this.repository.decrementInterviewAvailabilityByUserId(
           user_id,
           number_of_interviews
         );

@@ -32,10 +32,14 @@ class Service {
 
       promocode_id = discount.id
 
-      finalPrice = discount
-        ? product.price - (product.price * discount.discount_percent) / 100
-        : product.price
-
+      if (discount.promo_code_type === "flat") {
+        finalPrice = product.price - discount.discount_value
+      } else if (discount.promo_code_type === "percentage") {
+        finalPrice = discount
+          ? product.price - (product.price * discount.discount_value) / 100
+          : product.price
+      }
+      
       if (isNaN(finalPrice) || finalPrice < 0) {
         throw new BadRequestError("Something went wrong")
       }
@@ -64,6 +68,7 @@ class Service {
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
     })
+    console.log(session)
 
     return { id: session.id }
   }

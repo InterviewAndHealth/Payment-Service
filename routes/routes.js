@@ -23,8 +23,20 @@ router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
   const user_id = req?.userId
   const role = req?.role
 
-  if (!product || !successUrl || !cancelUrl) {
-    throw new BadRequestError("Product, successUrl, and cancelUrl are required")
+  if (!product || !successUrl || !cancelUrl || !number_of_interviews) {
+    throw new BadRequestError(
+      "Product, successUrl, cancelUrl and number of interviews are required"
+    )
+  }
+
+  if (
+    !product.price ||
+    !product.currency ||
+    !product.package_type ||
+    !product.name ||
+    !product.id
+  ) {
+    throw new BadRequestError("Invalid product structure")
   }
 
   const data = await service.createCheckoutSession(
@@ -43,6 +55,19 @@ router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
   console.log("first", response)
 
   return res.status(201).json({ id: session_id })
+})
+
+router.post("/cancel-subscription", authMiddleware, async (req, res) => {
+  const { stripe_subscription_id } = req.body
+
+  if (!stripe_subscription_id) {
+    throw new BadRequestError("Stripe subscription id is required")
+  }
+
+  await service.cancelSubscription(stripe_subscription_id)
+  return res
+    .status(201)
+    .json({ message: "Subscription cancelled successfully" })
 })
 
 router.post("/billings", authMiddleware, async (req, res) => {
@@ -139,13 +164,13 @@ router.get("/packages", authMiddleware, async (req, res) => {
   ]
 
   let country = country_name || "US"
-  const package_type = req?.role
+  const user_type = req?.role
 
   if (EUR_COUNTRY.includes(country)) {
     country = "DEU"
   }
 
-  const data = await service.getPackages(package_type, country)
+  const data = await service.getPackages(user_type, country)
   return res.status(200).json(data)
 })
 

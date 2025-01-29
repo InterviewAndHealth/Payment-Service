@@ -1,6 +1,15 @@
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'package_type') THEN
+        CREATE TYPE package_type AS ENUM ('ONETIME', 'RECURRING');
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS packages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    package_type VARCHAR(20),
+    user_type VARCHAR(255) NOT NULL,
+    package_type package_type NOT NULL,
+    name VARCHAR(255) NOT NULL,
     number_of_interviews INT,
     country VARCHAR(50),
     currency VARCHAR(10),
@@ -11,36 +20,36 @@ CREATE TABLE IF NOT EXISTS packages (
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM packages) THEN
-        INSERT INTO packages (package_type, number_of_interviews, country, currency, price, features)
+        INSERT INTO packages (user_type,package_type, name, number_of_interviews, country, currency, price, features)
         VALUES
-            ('STUDENT', 1, 'IND', 'INR', 349, ARRAY['AI screening', '1 mock interview']),
-            ('STUDENT', 1, 'GBR', 'GBP', 3.99, ARRAY['AI screening', '1 mock interview']),
-            ('STUDENT', 1, 'US', 'USD', 3.99, ARRAY['AI screening', '1 mock interview']),
-            ('STUDENT', 1, 'DEU', 'EUR', 3.99, ARRAY['AI screening', '1 mock interview']),
+            ('STUDENT', 'ONETIME', 'One Interview', 1, 'IND', 'INR', 349, ARRAY['One Practise Interview', 'Feedback', 'Rank']),
+            ('STUDENT', 'ONETIME', 'One Interview', 1, 'GBR', 'GBP', 3.99, ARRAY['One Practise Interview', 'Feedback', 'Rank']),
+            ('STUDENT', 'ONETIME', 'One Interview', 1, 'US', 'USD', 3.99, ARRAY['One Practise Interview', 'Feedback', 'Rank']),
+            ('STUDENT', 'ONETIME', 'One Interview', 1, 'DEU', 'EUR', 3.99, ARRAY['One Practise Interview', 'Feedback', 'Rank']),
 
-            ('STUDENT', 5, 'IND', 'INR', 1399, ARRAY['AI screening', '5 mock interview']),
-            ('STUDENT', 5, 'GBR', 'GBP', 16.99, ARRAY['AI screening', '5 mock interview']),
-            ('STUDENT', 5, 'US', 'USD', 16.99, ARRAY['AI screening', '5 mock interview']),
-            ('STUDENT', 5, 'DEU', 'EUR', 3.99, ARRAY['AI screening', '5 mock interview']),
+            ('STUDENT', 'RECURRING', 'Gold', 5, 'IND', 'INR', 999, ARRAY['5 Practise Interviews', 'Feedback', 'Rank']),
+            ('STUDENT', 'RECURRING', 'Gold', 5, 'GBR', 'GBP', 9.99, ARRAY['5 Practise Interviews', 'Feedback', 'Rank']),
+            ('STUDENT', 'RECURRING', 'Gold', 5, 'US', 'USD', 14.99, ARRAY['5 Practise Interviews', 'Feedback', 'Rank']),
+            ('STUDENT', 'RECURRING', 'Gold', 5, 'DEU', 'EUR', 14.99, ARRAY['5 Practise Interviews', 'Feedback', 'Rank']),
 
-            ('STUDENT', 10, 'IND', 'INR', 2499, ARRAY['AI screening', '10 mock interview']),
-            ('STUDENT', 10, 'GBR', 'GBP', 24.99, ARRAY['AI screening', '10 mock interview']),
-            ('STUDENT', 10, 'US', 'USD', 24.99, ARRAY['AI screening', '10 mock interview']),
-            ('STUDENT', 10, 'DEU', 'EUR', 3.99, ARRAY['AI screening', '10 mock interview']),
+            ('STUDENT', 'RECURRING', 'Platinum', 12, 'IND', 'INR', 1999, ARRAY['12 Practise Interviews', 'Feedback', 'Rank']),
+            ('STUDENT', 'RECURRING', 'Platinum', 12, 'GBR', 'GBP', 19.99, ARRAY['12 Practise Interviews', 'Feedback', 'Rank']),
+            ('STUDENT', 'RECURRING', 'Platinum', 12, 'US', 'USD', 24.99, ARRAY['12 Practise Interviews', 'Feedback', 'Rank']),
+            ('STUDENT', 'RECURRING', 'Platinum', 12, 'DEU', 'EUR', 24.99, ARRAY['12 Practise Interviews', 'Feedback', 'Rank']),
 
-            ('RECRUITER', 10, 'IND', 'INR', 9999, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
-            ('RECRUITER', 10, 'GBR', 'GBP', 99, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
-            ('RECRUITER', 10, 'US', 'USD', 129, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
-            ('RECRUITER', 10, 'DEU', 'EUR', 129, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
+            ('CORPORATE', 'ONETIME', '20 AI Interviews', 20, 'IND', 'INR', 9999, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 20 candidates']),
+            ('CORPORATE', 'ONETIME', '20 AI Interviews', 20, 'GBR', 'GBP', 99, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 20 candidates']),
+            ('CORPORATE', 'ONETIME', '20 AI Interviews', 20, 'US', 'USD', 129, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 20 candidates']),
+            ('CORPORATE', 'ONETIME', '20 AI Interviews', 20, 'DEU', 'EUR', 129, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 20 candidates']),
 
-            ('RECRUITER', 20, 'IND', 'INR', 16999, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 20 candidates', 'Shout out on social media']),
-            ('RECRUITER', 20, 'GBR', 'GBP', 169, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 20 candidates', 'Shout out on social media']),
-            ('RECRUITER', 20, 'US', 'USD', 199, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 20 candidates', 'Shout out on social media']),
-            ('RECRUITER', 20, 'DEU', 'EUR', 199, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 20 candidates', 'Shout out on social media']),
+            ('CORPORATE', 'RECURRING', 'Gold', 100, 'IND', 'INR', 19999, ARRAY['Access to all applicants', '5 users', 'Sponsored listing', 'AI Screening of all candidates', '100 AI Interviews/month', 'Shout out on social media']),
+            ('CORPORATE', 'RECURRING', 'Gold', 100, 'GBR', 'GBP', 199, ARRAY['Access to all applicants', '5 users', 'Sponsored listing', 'AI Screening of all candidates', '100 AI Interviews/month', 'Shout out on social media']),
+            ('CORPORATE', 'RECURRING', 'Gold', 100, 'US', 'USD', 249, ARRAY['Access to all applicants', '5 users', 'Sponsored listing', 'AI Screening of all candidates', '100 AI Interviews/month', 'Shout out on social media']),
+            ('CORPORATE', 'RECURRING', 'Gold', 100, 'DEU', 'EUR', 249, ARRAY['Access to all applicants', '5 users', 'Sponsored listing', 'AI Screening of all candidates', '100 AI Interviews/month', 'Shout out on social media']),
 
-            ('RECRUITER', 50, 'IND', 'INR', 34999, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 50 candidates', 'Shout out on social media']),
-            ('RECRUITER', 50, 'GBR', 'GBP', 349, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 50 candidates', 'Shout out on social media']),
-            ('RECRUITER', 50, 'US', 'USD', 399, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 50 candidates', 'Shout out on social media']),
-            ('RECRUITER', 50, 'DEU', 'EUR', 399, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 50 candidates', 'Shout out on social media']);
+            ('CORPORATE', 'RECURRING', 'Platinum', 500, 'IND', 'INR', 49999, ARRAY['Access to all applicants', '20 users', 'Sponsored listing', 'AI Screening of all candidates', 'AI screening of your database', '500 AI Interviews', 'Shout out on social media']),
+            ('CORPORATE', 'RECURRING', 'Platinum', 500, 'GBR', 'GBP', 599, ARRAY['Access to all applicants', '20 users', 'Sponsored listing', 'AI Screening of all candidates', 'AI screening of your database', '500 AI Interviews', 'Shout out on social media']),
+            ('CORPORATE', 'RECURRING', 'Platinum', 500, 'US', 'USD', 749, ARRAY['Access to all applicants', '20 users', 'Sponsored listing', 'AI Screening of all candidates', 'AI screening of your database', '500 AI Interviews', 'Shout out on social media']),
+            ('CORPORATE', 'RECURRING', 'Platinum', 500, 'DEU', 'EUR', 749, ARRAY['Access to all applicants', '20 users', 'Sponsored listing', 'AI Screening of all candidates', 'AI screening of your database', '500 AI Interviews', 'Shout out on social media']);
     END IF;
 END $$;

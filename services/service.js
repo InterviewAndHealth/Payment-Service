@@ -38,36 +38,80 @@ class Service {
         finalPrice = discount
           ? product.price - (product.price * discount.discount_value) / 100
           : product.price
+      } else {
+        throw new BadRequestError("Invalid promo code type")
       }
-      
+
       if (isNaN(finalPrice) || finalPrice < 0) {
         throw new BadRequestError("Something went wrong")
       }
     }
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: product.currency,
-            product_data: {
-              name: product.name,
-            },
-            unit_amount: Math.round(finalPrice * 100),
+    let stripe_customer_id
+    if (product.package_type.toUpperCase() === "RECURRING") {
+      const subscription = await this.repository.getSubscription(user_id)
+
+      if (subscription) {
+        stripe_customer_id = subscription.stripe_customer_id
+      } else {
+        const stripeCustomer = await stripe.customers.create({
+          name: `${user_id}`,
+          metadata: {
+            user_id,
           },
-          quantity: product.quantity,
+        })
+
+        stripe_customer_id = stripeCustomer.id
+
+        await this.repository.createSubscription(
+          user_id,
+          product.id,
+          stripe_customer_id
+        )
+      }
+    }
+
+    let mode
+    let lineItems = [
+      {
+        price_data: {
+          currency: product.currency,
+          product_data: {
+            name: product.name,
+          },
+          unit_amount: Math.round(finalPrice * 100),
+          ...(product.package_type.toUpperCase() === "RECURRING" && {
+            recurring: {
+              interval: "day",
+            },
+          }),
         },
-      ],
+        quantity: product.quantity,
+      },
+    ]
+
+    if (product.package_type.toUpperCase() === "RECURRING") {
+      mode = "subscription"
+    } else {
+      mode = "payment" // for one-time payment
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode,
+      ...(product.package_type.toUpperCase() === "RECURRING" && {
+        customer: stripe_customer_id,
+      }),
+      payment_method_types: ["card"],
+      line_items: lineItems,
       metadata: {
         promocode_id,
         number_of_interviews,
       },
-      mode: "payment",
       success_url: successUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
     })
+
     console.log(session)
 
     return { id: session.id }
@@ -80,17 +124,6 @@ class Service {
 
   async webhookservice(sig, info) {
     let event
-
-    // try {
-    //   event = stripe.webhooks.constructEvent(info, sig, STRIPE_WEBHOOK_SECRET);
-
-    // } catch (err) {
-    //   console.error('Webhook signature verification failed.', err);
-    //   return res.status(400).send(`Webhook Error: ${err.message}`);
-    // }
-
-    // event = await stripe.webhooks.constructEvent(info, sig, STRIPE_WEBHOOK_SECRET);
-
     try {
       event = await stripe.webhooks.constructEvent(
         info,
@@ -105,6 +138,8 @@ class Service {
     if (!event) {
       throw new BadRequestError("Invalid Event")
     }
+
+    // console.log("first", event)
 
     // Handle the event types you care about
     if (event.type === "checkout.session.completed") {
@@ -121,6 +156,14 @@ class Service {
       // const timestamp = session.created;
 
       const timestamp = new Date(session.created * 1000) // Convert seconds to milliseconds
+
+      if (session.subscription) {
+        // update stripe_subscription_id
+        await this.repository.updateSubscriptionId(
+          session.customer,
+          session.subscription
+        )
+      }
 
       const session_id = session.id
 
@@ -144,7 +187,6 @@ class Service {
         customer_email,
         timestamp
       )
-      console.log("testing 123")
 
       const promocode_id = session.metadata.promocode_id
 
@@ -152,26 +194,107 @@ class Service {
         await this.promoCodeUsed(promocode_id, user_id)
       }
 
-      const existing = await this.repository.getInterviewByUserId(user_id)
-      const interview_availability = session.metadata.number_of_interviews
-      if (existing.length === 0) {
-        // No record, create one
-        const response2 = await this.repository.createInterviewAvailability(
-          user_id,
-          interview_availability
+      if (session.mode === "payment") {
+        const existing = await this.repository.getInterviewByUserId(user_id)
+        const interview_availability = session.metadata.number_of_interviews
+        if (existing.length === 0) {
+          // No record, create one
+          await this.repository.createInterviewAvailability(
+            user_id,
+            interview_availability
+          )
+        } else {
+          // Increment interviews_available
+          await this.repository.incrementInterviewAvailability(
+            user_id,
+            interview_availability
+          )
+        }
+      }
+    }
+
+    // Event when the payment is successfull (every subscription interval)
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object
+
+      console.log("invoice.paid:", invoice)
+
+      await this.repository.updateSubscriptionStatus(
+        invoice.subscription,
+        "ACTIVE"
+      )
+    }
+
+    // Event when the payment failed due to card problems or insufficient funds (every subscription interval)
+    if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object
+
+      console.log("invoice.payment_failed:", invoice)
+
+      await this.repository.updateSubscriptionStatus(
+        invoice.subscription,
+        "UNPAID"
+      )
+    }
+
+    // Event when subscription is updated
+    if (event.type === "customer.subscription.updated") {
+      const subscription = event.data.object
+
+      console.log("customer.subscription.updated:", subscription)
+      if (subscription.status === "canceled") {
+        await this.repository.updateSubscriptionStatus(
+          subscription.id,
+          "CANCELED"
         )
-        console.log("response2", response2)
-      } else {
-        // Increment interviews_available
-        const response3 = await this.repository.incrementInterviewAvailability(
-          user_id,
-          interview_availability
-        )
-        console.log("response3", response3)
       }
 
-      return true
+      if (subscription.status === "active") {
+        await this.repository.updateSubscriptionStatus(
+          subscription.id,
+          "ACTIVE"
+        )
+
+        const existingSubscription =
+          await this.repository.getSubscriptionByStripeCustomerId(
+            subscription.customer
+          )
+
+        if (existingSubscription) {
+          const pkg = await this.repository.getPackageById(
+            existingSubscription.package_id
+          )
+
+          if (pkg) {
+            const existing = await this.repository.getInterviewByUserId(user_id)
+            const interview_availability = pkg.number_of_interviews
+            if (existing.length === 0) {
+              // No record, create one
+              await this.repository.createInterviewAvailability(
+                user_id,
+                interview_availability
+              )
+            } else {
+              // Increment interviews_available
+              await this.repository.incrementInterviewAvailability(
+                user_id,
+                interview_availability
+              )
+            }
+          }
+        }
+      }
     }
+
+    return true
+  }
+
+  async cancelSubscription(stripe_subscription_id) {
+    const subscription = await stripe.subscriptions.cancel(
+      stripe_subscription_id
+    )
+
+    console.log("Subscription canceled:", subscription)
   }
 
   // services/interviewService.js
@@ -250,12 +373,12 @@ class Service {
     return billing
   }
 
-  async getPackages(package_type, country) {
-    if (!package_type) {
-      throw new BadRequestError("package type is required.")
+  async getPackages(user_type, country) {
+    if (!user_type) {
+      throw new BadRequestError("user type is required.")
     }
 
-    const packages = await this.repository.getPackages(package_type, country)
+    const packages = await this.repository.getPackages(user_type, country)
 
     return packages
   }

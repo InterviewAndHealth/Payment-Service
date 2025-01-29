@@ -62,6 +62,8 @@ class DB {
       this.promoCodeUsageTable()
 
       this.userReferralTable()
+
+      this.subscriptionsTable()
     }
     return this.#pool.connect()
   }
@@ -125,6 +127,13 @@ class DB {
 
   static async userReferralTable() {
     const pathToSQL = path.join(__dirname, "queries", "user_referrals.sql")
+    const rawQuery = fs.readFileSync(pathToSQL).toString()
+    const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ")
+    return this.#pool.query(query)
+  }
+
+  static async subscriptionsTable() {
+    const pathToSQL = path.join(__dirname, "queries", "subscriptions.sql")
     const rawQuery = fs.readFileSync(pathToSQL).toString()
     const query = rawQuery.replace(/\n/g, "").replace(/\s+/g, " ")
     return this.#pool.query(query)

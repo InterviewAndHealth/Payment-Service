@@ -44,6 +44,14 @@ class Repository {
     })
   }
 
+  async updateInterviewAvailability(user_id, interviews_available) {
+    const result = await DB.query({
+      text: `UPDATE interview_availability SET interviews_available = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *`,
+      values: [user_id, interviews_available],
+    })
+    return result.rows[0]
+  }
+
   async addSession(session_id, user_id) {
     const result = await DB.query({
       text: `INSERT INTO sessions (session_id,user_id) VALUES ($1,$2) RETURNING *`,
@@ -111,14 +119,14 @@ class Repository {
     return result.rows[0]
   }
 
-  async getPackages(package_type, country) {
+  async getPackages(user_type, country) {
     let result = await DB.query({
       text: `
       SELECT *
       FROM packages
-      WHERE package_type = $1 AND country = $2
+      WHERE user_type = $1 AND country = $2
     `,
-      values: [package_type.toUpperCase(), country.toUpperCase()],
+      values: [user_type.toUpperCase(), country.toUpperCase()],
     })
 
     if (result.rows.length === 0) {
@@ -126,9 +134,9 @@ class Repository {
         text: `
         SELECT *
         FROM packages
-        WHERE package_type = $1 AND country = $2
+        WHERE user_type = $1 AND country = $2
       `,
-        values: [package_type.toUpperCase(), "US"],
+        values: [user_type.toUpperCase(), "US"],
       })
     }
 
@@ -264,6 +272,54 @@ class Repository {
     const result = await DB.query({
       text: `UPDATE interview_availability SET interviews_available = interviews_available - $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *`,
       values: [user_id, number_of_interviews],
+    })
+    return result.rows[0]
+  }
+
+  async getSubscription (user_id) {
+    const result = await DB.query({
+      text: `SELECT * FROM subscriptions WHERE user_id = $1`,
+      values: [user_id],
+    })
+    return result.rows[0]
+  }
+
+  async getSubscriptionByStripeCustomerId (stripe_customer_id) {
+    const result = await DB.query({
+      text: `SELECT * FROM subscriptions WHERE stripe_customer_id = $1`,
+      values: [stripe_customer_id],
+    })
+    return result.rows[0]
+  }
+
+  async createSubscription (user_id, id, stripe_customer_id) {
+    const result = await DB.query({
+      text: `INSERT INTO subscriptions (user_id, package_id, stripe_customer_id) VALUES ($1, $2, $3) RETURNING *`,
+      values: [user_id, id, stripe_customer_id],
+    })
+    return result.rows[0]
+  }
+
+  async updateSubscriptionId(stripe_customer_id, stripe_subscription_id) {
+    const result = await DB.query({
+      text: `UPDATE subscriptions SET stripe_subscription_id = $1, updated_at = CURRENT_TIMESTAMP WHERE stripe_customer_id = $2 RETURNING *`,
+      values: [stripe_subscription_id, stripe_customer_id],
+    })
+    return result.rows[0]
+  }
+
+  async updateSubscriptionStatus(stripe_subscription_id, status) {
+    const result = await DB.query({
+      text: `UPDATE subscriptions SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE stripe_subscription_id = $2 RETURNING *`,
+      values: [status, stripe_subscription_id],
+    })
+    return result.rows[0]
+  }
+
+  async getPackageById(id) {
+    const result = await DB.query({
+      text: `SELECT * FROM packages WHERE id = $1`,
+      values: [id],
     })
     return result.rows[0]
   }

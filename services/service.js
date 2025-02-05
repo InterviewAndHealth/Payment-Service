@@ -139,12 +139,10 @@ class Service {
       throw new BadRequestError("Invalid Event")
     }
 
-    // console.log("first", event)
-
     // Handle the event types you care about
     if (event.type === "checkout.session.completed") {
       const session = event.data.object
-      console.log("session", session)
+      
       // Extract important payment details from the session object
       // const paymentintent_id = session.payment_intent
       const paymentintent_id =
@@ -168,16 +166,15 @@ class Service {
       const session_id = session.id
 
       const user_id = await this.repository.getUserBySessionId(session_id)
-      console.log(user_id)
 
       if (!user_id) {
         throw new NotFoundError("User not found")
       }
 
-      const response1 = await this.repository.updateSession(session_id)
+      await this.repository.updateSession(session_id)
 
       // Save the transaction details in your database
-      const result = await this.repository.addPayment(
+      await this.repository.addPayment(
         user_id,
         session_id,
         paymentintent_id,
@@ -217,8 +214,6 @@ class Service {
     if (event.type === "invoice.paid") {
       const invoice = event.data.object
 
-      console.log("invoice.paid:", invoice)
-
       await this.repository.updateSubscriptionStatus(
         invoice.subscription,
         "ACTIVE"
@@ -229,8 +224,6 @@ class Service {
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object
 
-      console.log("invoice.payment_failed:", invoice)
-
       await this.repository.updateSubscriptionStatus(
         invoice.subscription,
         "UNPAID"
@@ -240,8 +233,7 @@ class Service {
     // Event when subscription is updated
     if (event.type === "customer.subscription.updated") {
       const subscription = event.data.object
-
-      console.log("customer.subscription.updated:", subscription)
+      
       if (subscription.status === "canceled") {
         await this.repository.updateSubscriptionStatus(
           subscription.id,
@@ -259,12 +251,12 @@ class Service {
           await this.repository.getSubscriptionByStripeCustomerId(
             subscription.customer
           )
-
+        const user_id = existingSubscription.user_id
         if (existingSubscription) {
           const pkg = await this.repository.getPackageById(
             existingSubscription.package_id
           )
-
+          
           if (pkg) {
             const existing = await this.repository.getInterviewByUserId(user_id)
             const interview_availability = pkg.number_of_interviews
@@ -290,11 +282,9 @@ class Service {
   }
 
   async cancelSubscription(stripe_subscription_id) {
-    const subscription = await stripe.subscriptions.cancel(
+    return await stripe.subscriptions.cancel(
       stripe_subscription_id
     )
-
-    console.log("Subscription canceled:", subscription)
   }
 
   // services/interviewService.js

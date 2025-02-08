@@ -30,6 +30,7 @@ router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
   }
 
   if (
+    !product.quantity ||
     !product.price ||
     !product.currency ||
     !product.package_type ||
@@ -70,6 +71,28 @@ router.post("/cancel-subscription", authMiddleware, async (req, res) => {
     .json({ message: "Subscription cancelled successfully" })
 })
 
+router.put("/update-subscription", authMiddleware, async (req, res) => {
+  const user_id = req?.userId
+  const { product } = req.body
+
+  if (!product) {
+    throw new BadRequestError("Product is required")
+  }
+
+  if (
+    !product.price ||
+    !product.currency ||
+    !product.package_type ||
+    !product.name ||
+    !product.id
+  ) {
+    throw new BadRequestError("Invalid product structure")
+  }
+
+  await service.updateSubscription(user_id, product)
+  return res.status(201).json({ message: "Subscription updated successfully" })
+})
+
 router.post("/billings", authMiddleware, async (req, res) => {
   const billingData = {
     user_id: req.userId,
@@ -98,19 +121,9 @@ router.post(
 )
 
 // routes/interviewAvailability.js
-
-router.post("/addinterview", authMiddleware, async (req, res) => {
-  // const { user_id } = req.body;
-
-  const user_id = req.userId
-
-  const data = await service.addInterview(user_id)
-  return res.status(201).json(data)
-})
-
 router.post("/reduceinterview", authMiddleware, async (req, res) => {
   const user_id = req.userId
-
+  console.log(user_id)
   const data = await service.reduceInterview(user_id)
   return res.status(200).json(data)
 })

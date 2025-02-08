@@ -5,49 +5,70 @@ const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 12)
 
 // Repository will be used to interact with the database
 class Repository {
-  async getInterviewByUserId(user_id) {
-    const result = await DB.query({
-      text: `SELECT * FROM interview_availability WHERE user_id = $1`,
-      values: [user_id],
-    })
+  async getInterviewByUserId(user_id, package_type) {
+    let result
+    if (package_type) {
+      result = await DB.query({
+        text: `SELECT * FROM interview_availability WHERE user_id = $1 AND package_type = $2`,
+        values: [user_id, package_type],
+      })
+    } else {
+      result = await DB.query({
+        text: `SELECT * FROM interview_availability WHERE user_id = $1`,
+        values: [user_id],
+      })
+    }
+
     return result.rows
   }
 
-  async createInterviewAvailability(user_id, interviews_available = 1) {
+  async createInterviewAvailability(
+    user_id,
+    interviews_available = 1,
+    package_type
+  ) {
     const result = await DB.query({
-      text: `INSERT INTO interview_availability (user_id, interviews_available) VALUES ($1, $2) RETURNING *`,
-      values: [user_id, interviews_available],
+      text: `INSERT INTO interview_availability (user_id, interviews_available, package_type) VALUES ($1, $2, $3) RETURNING *`,
+      values: [user_id, interviews_available, package_type],
     })
     return result.rows[0]
   }
 
-  async incrementInterviewAvailability(user_id, interviews_available) {
+  async incrementInterviewAvailability(
+    user_id,
+    interviews_available,
+    package_type
+  ) {
     const result = await DB.query({
-      text: `UPDATE interview_availability SET interviews_available = interviews_available + $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *`,
-      values: [user_id, interviews_available],
+      text: `UPDATE interview_availability SET interviews_available = interviews_available + $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND package_type = $3 RETURNING *`,
+      values: [user_id, interviews_available, package_type],
     })
     return result.rows[0]
   }
 
-  async decrementInterviewAvailability(user_id) {
+  async decrementInterviewAvailability(user_id, package_type) {
     const result = await DB.query({
-      text: `UPDATE interview_availability SET interviews_available = interviews_available - 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *`,
-      values: [user_id],
+      text: `UPDATE interview_availability SET interviews_available = interviews_available - 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND package_type = $2 RETURNING *`,
+      values: [user_id, package_type],
     })
     return result.rows[0]
   }
 
-  async deleteInterviewAvailability(user_id) {
+  async deleteInterviewAvailability(user_id, package_type) {
     await DB.query({
-      text: `DELETE FROM interview_availability WHERE user_id = $1`,
-      values: [user_id],
+      text: `DELETE FROM interview_availability WHERE user_id = $1 AND package_type = $2`,
+      values: [user_id, package_type],
     })
   }
 
-  async updateInterviewAvailability(user_id, interviews_available) {
+  async updateInterviewAvailability(
+    user_id,
+    interviews_available,
+    package_type
+  ) {
     const result = await DB.query({
-      text: `UPDATE interview_availability SET interviews_available = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *`,
-      values: [user_id, interviews_available],
+      text: `UPDATE interview_availability SET interviews_available = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND package_type = $3 RETURNING *`,
+      values: [user_id, interviews_available, package_type],
     })
     return result.rows[0]
   }
@@ -267,8 +288,7 @@ class Repository {
     return result.rows
   }
 
-
-  async decrementInterviewAvailabilityByUserId(user_id,number_of_interviews) {
+  async decrementInterviewAvailabilityByUserId(user_id, number_of_interviews) {
     const result = await DB.query({
       text: `UPDATE interview_availability SET interviews_available = interviews_available - $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *`,
       values: [user_id, number_of_interviews],
@@ -276,7 +296,7 @@ class Repository {
     return result.rows[0]
   }
 
-  async getSubscription (user_id) {
+  async getSubscription(user_id) {
     const result = await DB.query({
       text: `SELECT * FROM subscriptions WHERE user_id = $1`,
       values: [user_id],
@@ -284,7 +304,7 @@ class Repository {
     return result.rows[0]
   }
 
-  async getSubscriptionByStripeCustomerId (stripe_customer_id) {
+  async getSubscriptionByStripeCustomerId(stripe_customer_id) {
     const result = await DB.query({
       text: `SELECT * FROM subscriptions WHERE stripe_customer_id = $1`,
       values: [stripe_customer_id],
@@ -292,11 +312,16 @@ class Repository {
     return result.rows[0]
   }
 
-  async createSubscription (user_id, id, stripe_customer_id) {
+  async createSubscription(user_id, id, stripe_customer_id) {
+    const subscriptionDuration = "30 days"
+
     const result = await DB.query({
-      text: `INSERT INTO subscriptions (user_id, package_id, stripe_customer_id) VALUES ($1, $2, $3) RETURNING *`,
+      text: `INSERT INTO subscriptions (user_id, package_id, stripe_customer_id, expires_at) 
+               VALUES ($1, $2, $3, CURRENT_TIMESTAMP + INTERVAL '${subscriptionDuration}') 
+               RETURNING *`,
       values: [user_id, id, stripe_customer_id],
     })
+
     return result.rows[0]
   }
 
@@ -312,6 +337,14 @@ class Repository {
     const result = await DB.query({
       text: `UPDATE subscriptions SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE stripe_subscription_id = $2 RETURNING *`,
       values: [status, stripe_subscription_id],
+    })
+    return result.rows[0]
+  }
+
+  async updateSubscriptionPackageId(stripe_subscription_id, package_id) {
+    const result = await DB.query({
+      text: `UPDATE subscriptions SET package_id = $1, updated_at = CURRENT_TIMESTAMP WHERE stripe_subscription_id = $2 RETURNING *`,
+      values: [package_id, stripe_subscription_id],
     })
     return result.rows[0]
   }

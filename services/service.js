@@ -53,6 +53,7 @@ class Service {
 
       if (subscription) {
         stripe_customer_id = subscription.stripe_customer_id
+        throw new BadRequestError("User already has a subscription")
       } else {
         const stripeCustomer = await stripe.customers.create({
           name: `${user_id}`,
@@ -142,7 +143,7 @@ class Service {
     // Handle the event types you care about
     if (event.type === "checkout.session.completed") {
       const session = event.data.object
-      
+
       // Extract important payment details from the session object
       // const paymentintent_id = session.payment_intent
       const paymentintent_id =
@@ -192,19 +193,24 @@ class Service {
       }
 
       if (session.mode === "payment") {
-        const existing = await this.repository.getInterviewByUserId(user_id)
+        const existing = await this.repository.getInterviewByUserId(
+          user_id,
+          "ONETIME"
+        )
         const interview_availability = session.metadata.number_of_interviews
         if (existing.length === 0) {
           // No record, create one
           await this.repository.createInterviewAvailability(
             user_id,
-            interview_availability
+            interview_availability,
+            "ONETIME"
           )
         } else {
           // Increment interviews_available
           await this.repository.incrementInterviewAvailability(
             user_id,
-            interview_availability
+            interview_availability,
+            "ONETIME"
           )
         }
       }
@@ -233,8 +239,19 @@ class Service {
     // Event when subscription is updated
     if (event.type === "customer.subscription.updated") {
       const subscription = event.data.object
-      
+
+      console.log("Subscription updated", subscription)
+
       if (subscription.status === "canceled") {
+        const existingSubscription =
+          await this.repository.getSubscriptionByStripeCustomerId(
+            subscription.customer
+          )
+        await this.repository.deleteInterviewAvailability(
+          existingSubscription.user_id,
+          "RECURRING"
+        )
+
         await this.repository.updateSubscriptionStatus(
           subscription.id,
           "CANCELED"
@@ -256,21 +273,26 @@ class Service {
           const pkg = await this.repository.getPackageById(
             existingSubscription.package_id
           )
-          
+
           if (pkg) {
-            const existing = await this.repository.getInterviewByUserId(user_id)
+            const existing = await this.repository.getInterviewByUserId(
+              user_id,
+              pkg.package_type
+            )
             const interview_availability = pkg.number_of_interviews
             if (existing.length === 0) {
               // No record, create one
               await this.repository.createInterviewAvailability(
                 user_id,
-                interview_availability
+                interview_availability,
+                pkg.package_type
               )
             } else {
-              // Increment interviews_available
-              await this.repository.incrementInterviewAvailability(
+              // Update interviews_available
+              await this.repository.updateInterviewAvailability(
                 user_id,
-                interview_availability
+                interview_availability,
+                pkg.package_type
               )
             }
           }
@@ -282,35 +304,56 @@ class Service {
   }
 
   async cancelSubscription(stripe_subscription_id) {
-    return await stripe.subscriptions.cancel(
-      stripe_subscription_id
+    return await stripe.subscriptions.update(stripe_subscription_id, {
+      cancel_at_period_end: false,
+    })
+  }
+
+  async updateSubscription(user_id, product) {
+    const subscription = await this.repository.getSubscription(user_id)
+    if (!subscription) {
+      throw new NotFoundError("Subscription not found")
+    }
+
+    await this.repository.updateSubscriptionPackageId(
+      subscription.stripe_subscription_id,
+      product.id
+    )
+
+    const currentSubscription = await stripe.subscriptions.retrieve(
+      subscription.stripe_subscription_id
+    )
+
+    const currentSubscriptionItemId = currentSubscription.items.data[0].id
+
+    const newPrice = await stripe.prices.create({
+      unit_amount: Math.round(product.price * 100),
+      currency: product.currency,
+      recurring: {
+        interval: "day",
+      },
+      product_data: {
+        name: product.name,
+      },
+    })
+
+    return await stripe.subscriptions.update(
+      subscription.stripe_subscription_id,
+      {
+        items: [
+          {
+            id: currentSubscriptionItemId,
+            price: newPrice.id,
+          },
+        ],
+        metadata: {
+          type: "upgrade_subscription",
+        },
+      }
     )
   }
 
   // services/interviewService.js
-
-  async addInterview(user_id) {
-    const existing = await this.repository.getInterviewByUserId(user_id)
-
-    if (existing.length === 0) {
-      // No record, create one
-      const result = await this.repository.createInterviewAvailability(
-        user_id,
-        1
-      )
-      return { message: "Interview availability created", interview: result }
-    } else {
-      // Increment interviews_available
-      const result = await this.repository.incrementInterviewAvailability(
-        user_id
-      )
-      return {
-        message: "Interview availability incremented",
-        interview: result,
-      }
-    }
-  }
-
   async reduceInterview(user_id) {
     const existing = await this.repository.getInterviewByUserId(user_id)
 
@@ -324,7 +367,8 @@ class Service {
     if (interview.interviews_available > 1) {
       // Decrement interviews_available
       const result = await this.repository.decrementInterviewAvailability(
-        user_id
+        user_id,
+        interview.package_type
       )
       return {
         message: "Interview availability decremented",
@@ -332,7 +376,10 @@ class Service {
       }
     } else {
       // Delete the record
-      await this.repository.deleteInterviewAvailability(user_id)
+      await this.repository.deleteInterviewAvailability(
+        user_id,
+        interview.package_type
+      )
       return { message: "Interview availability exhausted, record deleted" }
     }
   }
@@ -343,9 +390,13 @@ class Service {
     if (existing.length === 0) {
       return { message: "No interview availability", available: 0 }
     } else {
+      let totalInterviewsAvailable = 0
+      for (let i = 0; i < existing.length; i++) {
+        totalInterviewsAvailable += existing[i].interviews_available
+      }
       return {
         message: "Interview availability found",
-        available: existing[0].interviews_available,
+        available: totalInterviewsAvailable,
       }
     }
   }

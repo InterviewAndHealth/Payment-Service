@@ -1,8 +1,7 @@
-const dotEnv = require("dotenv");
-const { EVENT_TYPES, RPC_TYPES } = require("./types");
+const dotEnv = require("dotenv")
+const { EVENT_TYPES, RPC_TYPES } = require("./types")
 
-dotEnv.config();
-
+dotEnv.config()
 module.exports = {
   PORT: process.env.PORT || 8000,
   NODE_ENV: process.env.NODE_ENV,
@@ -38,4 +37,4 @@ module.exports = {
   JWT_SECRET_KEY: process.env.JWT_SECRET_KEY,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-};
+}

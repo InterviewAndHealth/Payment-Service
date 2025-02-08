@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     stripe_customer_id VARCHAR(255) NOT NULL,
     stripe_subscription_id VARCHAR(255),
     status status_type DEFAULT 'UNPAID',
+    expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )

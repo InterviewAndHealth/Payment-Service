@@ -304,6 +304,14 @@ class Repository {
     return result.rows[0]
   }
 
+  async getActiveSubscription(user_id) {
+    const result = await DB.query({
+      text: `SELECT * FROM subscriptions WHERE user_id = $1 AND status = 'ACTIVE'`,
+      values: [user_id],
+    })
+    return result.rows[0]
+  }
+
   async getSubscriptionByStripeCustomerId(stripe_customer_id) {
     const result = await DB.query({
       text: `SELECT * FROM subscriptions WHERE stripe_customer_id = $1`,

@@ -28,9 +28,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM promo_codes) THEN
         INSERT INTO promo_codes (code, discount_value, role, expiration_date, promo_code_type)
         VALUES
-        ('3EUU6LNB', 50, 'student', '2026-01-01', 'percentage'),
-        ('EZSTAJ01', 50, 'recruiter', '2026-01-01', 'percentage'),
-        ('G8A5V27E', 100, 'student', '2026-01-01', 'flat'),
-        ('L15XZFQG', 100, 'recruiter', '2026-01-01', 'flat');
+        ('P01EDW60', 99, 'student', '2026-01-01', 'percentage'),
+        ('7U1I047I', 100, 'student', '2026-01-01', 'percentage');
     END IF;
 END $$;

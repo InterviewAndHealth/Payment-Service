@@ -303,14 +303,25 @@ class Service {
     return true
   }
 
-  async cancelSubscription(stripe_subscription_id) {
-    return await stripe.subscriptions.update(stripe_subscription_id, {
-      cancel_at_period_end: false,
-    })
+  async getSubscription(user_id) {
+    return await this.repository.getActiveSubscription(user_id)
+  }
+
+  async cancelSubscription(user_id) {
+    const subscription = await this.repository.getActiveSubscription(user_id)
+    if (!subscription) {
+      throw new NotFoundError("Subscription not found")
+    }
+    return await stripe.subscriptions.update(
+      subscription.stripe_subscription_id,
+      {
+        cancel_at_period_end: false,
+      }
+    )
   }
 
   async updateSubscription(user_id, product) {
-    const subscription = await this.repository.getSubscription(user_id)
+    const subscription = await this.repository.getActiveSubscription(user_id)
     if (!subscription) {
       throw new NotFoundError("Subscription not found")
     }

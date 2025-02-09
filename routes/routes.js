@@ -58,14 +58,16 @@ router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
   return res.status(201).json({ id: session_id })
 })
 
+router.get("/subscription", authMiddleware, async (req, res) => {
+  const user_id = req?.userId
+
+  const data = await service.getSubscription(user_id)
+  return res.status(200).json(data)
+})
+
 router.post("/cancel-subscription", authMiddleware, async (req, res) => {
-  const { stripe_subscription_id } = req.body
-
-  if (!stripe_subscription_id) {
-    throw new BadRequestError("Stripe subscription id is required")
-  }
-
-  await service.cancelSubscription(stripe_subscription_id)
+  const user_id = req?.userId
+  await service.cancelSubscription(user_id)
   return res
     .status(201)
     .json({ message: "Subscription cancelled successfully" })
@@ -74,7 +76,7 @@ router.post("/cancel-subscription", authMiddleware, async (req, res) => {
 router.put("/update-subscription", authMiddleware, async (req, res) => {
   const user_id = req?.userId
   const { product } = req.body
-
+  console.log(product)
   if (!product) {
     throw new BadRequestError("Product is required")
   }

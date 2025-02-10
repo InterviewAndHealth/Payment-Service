@@ -83,7 +83,7 @@ class Service {
           unit_amount: Math.round(finalPrice * 100),
           ...(product.package_type.toUpperCase() === "RECURRING" && {
             recurring: {
-              interval: "day",
+              interval: "month",
             },
           }),
         },
@@ -341,7 +341,7 @@ class Service {
       unit_amount: Math.round(product.price * 100),
       currency: product.currency,
       recurring: {
-        interval: "day",
+        interval: "month",
       },
       product_data: {
         name: product.name,

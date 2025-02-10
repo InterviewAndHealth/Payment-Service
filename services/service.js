@@ -258,7 +258,7 @@ class Service {
         )
       }
 
-      if (subscription.status === "active") {
+      if (subscription.status === "active" && subscription.metadata.type !== "upgrade_subscription") {
         await this.repository.updateSubscriptionStatus(
           subscription.id,
           "ACTIVE"

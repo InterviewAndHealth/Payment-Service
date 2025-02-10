@@ -83,7 +83,7 @@ class Service {
           unit_amount: Math.round(finalPrice * 100),
           ...(product.package_type.toUpperCase() === "RECURRING" && {
             recurring: {
-              interval: "day",
+              interval: "monthly",
             },
           }),
         },
@@ -258,7 +258,7 @@ class Service {
         )
       }
 
-      if (subscription.status === "active") {
+      if (subscription.status === "active" && subscription.metadata.type !== "upgrade_subscription") {
         await this.repository.updateSubscriptionStatus(
           subscription.id,
           "ACTIVE"
@@ -341,7 +341,7 @@ class Service {
       unit_amount: Math.round(product.price * 100),
       currency: product.currency,
       recurring: {
-        interval: "day",
+        interval: "monthly",
       },
       product_data: {
         name: product.name,

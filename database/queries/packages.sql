@@ -38,9 +38,9 @@ BEGIN
             ('STUDENT', 'RECURRING', 'Platinum', 12, 'DEU', 'EUR', 24.99, ARRAY['12 Practise Interviews', 'Personalized Feedback ', 'Rank against competitors']),
 
             ('RECRUITER', 'ONETIME', '10 AI Interviews', 10, 'IND', 'INR', 2999, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
-            ('RECRUITER', 'ONETIME', '10 AI Interviews', 10, 'GBR', 'GBP', 34.99, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
-            ('RECRUITER', 'ONETIME', '10 AI Interviews', 10, 'US', 'USD', 39.99, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
-            ('RECRUITER', 'ONETIME', '10 AI Interviews', 10, 'DEU', 'EUR', 39.99, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
+            ('RECRUITER', 'ONETIME', '10 AI Interviews', 10, 'GBR', 'GBP', 29, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
+            ('RECRUITER', 'ONETIME', '10 AI Interviews', 10, 'US', 'USD', 39, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
+            ('RECRUITER', 'ONETIME', '10 AI Interviews', 10, 'DEU', 'EUR', 39, ARRAY['Access to all candidates', 'Sponsored listing', 'AI Screening of all candidates', 'AI Interview of 10 candidates']),
 
             ('RECRUITER', 'RECURRING', 'Gold', 100, 'IND', 'INR', 19999, ARRAY['Access to all applicants', '5 users', 'Sponsored listing', 'AI Screening of all candidates', '100 AI Interviews/month', 'Shout out on social media']),
             ('RECRUITER', 'RECURRING', 'Gold', 100, 'GBR', 'GBP', 199, ARRAY['Access to all applicants', '5 users', 'Sponsored listing', 'AI Screening of all candidates', '100 AI Interviews/month', 'Shout out on social media']),

@@ -26,6 +26,7 @@ class Service {
   ) {
     let finalPrice = product.price
     let promocode_id = null
+    let trialPeriodDays = undefined
 
     if (promocode) {
       const discount = await this.applyPromocode(promocode, user_id, role)
@@ -38,6 +39,8 @@ class Service {
         finalPrice = discount
           ? product.price - (product.price * discount.discount_value) / 100
           : product.price
+      } else if (discount.promo_code_type === "trial") {
+        trialPeriodDays = discount.discount_value
       } else {
         throw new BadRequestError("Invalid promo code type")
       }
@@ -49,7 +52,7 @@ class Service {
 
     let stripe_customer_id
     if (product.package_type.toUpperCase() === "RECURRING") {
-      const subscription = await this.repository.getSubscription(user_id)
+      const subscription = await this.repository.getActiveSubscription(user_id)
 
       if (subscription) {
         stripe_customer_id = subscription.stripe_customer_id
@@ -108,6 +111,11 @@ class Service {
         promocode_id,
         number_of_interviews,
       },
+      ...(product.package_type.toUpperCase() === "RECURRING" && {
+        subscription_data: {
+          trial_period_days: trialPeriodDays,
+        },
+      }),
       success_url: successUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
@@ -258,7 +266,10 @@ class Service {
         )
       }
 
-      if (subscription.status === "active" && subscription.metadata.type !== "upgrade_subscription") {
+      if (
+        subscription.status === "active" &&
+        subscription.metadata.type !== "upgrade_subscription"
+      ) {
         await this.repository.updateSubscriptionStatus(
           subscription.id,
           "ACTIVE"

@@ -2,8 +2,12 @@ const express = require("express")
 const { Service } = require("../services")
 const { BadRequestError } = require("../utils/errors")
 const authMiddleware = require("../middlewares/auth")
+const validateMiddleware = require("../middlewares/validate")
+const Validator = require("../schemas")
+const bodyParser = require("body-parser")
 const router = express.Router()
 const service = new Service()
+const validator = new Validator()
 
 router.get("/", (req, res) => {
   res.json({ message: "Welcome to the Payment Service" })
@@ -17,46 +21,34 @@ router.get("/failure", (req, res) => {
   res.json({ message: "failure page" })
 })
 
-router.post("/createcheckoutsession", authMiddleware, async (req, res) => {
-  const { product, successUrl, cancelUrl, number_of_interviews, promocode } =
-    req.body
-  const user_id = req?.userId
-  const role = req?.role
+router.post(
+  "/createcheckoutsession",
+  authMiddleware,
+  validateMiddleware(validator.createCheckoutSessionSchema),
+  async (req, res) => {
+    const { product, successUrl, cancelUrl, number_of_interviews, promocode } =
+      req.body
+    const user_id = req?.userId
+    const role = req?.role
 
-  if (!product || !successUrl || !cancelUrl || !number_of_interviews) {
-    throw new BadRequestError(
-      "Product, successUrl, cancelUrl and number of interviews are required"
+    const data = await service.createCheckoutSession(
+      product,
+      successUrl,
+      cancelUrl,
+      number_of_interviews,
+      user_id,
+      promocode,
+      role
     )
+
+    const session_id = data.id
+
+    const response = await service.addSessionInfo(session_id, user_id)
+    console.log("first", response)
+
+    return res.status(201).json({ id: session_id })
   }
-
-  if (
-    !product.quantity ||
-    !product.price ||
-    !product.currency ||
-    !product.package_type ||
-    !product.name ||
-    !product.id
-  ) {
-    throw new BadRequestError("Invalid product structure")
-  }
-
-  const data = await service.createCheckoutSession(
-    product,
-    successUrl,
-    cancelUrl,
-    number_of_interviews,
-    user_id,
-    promocode,
-    role
-  )
-
-  const session_id = data.id
-
-  const response = await service.addSessionInfo(session_id, user_id)
-  console.log("first", response)
-
-  return res.status(201).json({ id: session_id })
-})
+)
 
 router.get("/subscription", authMiddleware, async (req, res) => {
   const user_id = req?.userId
@@ -73,27 +65,20 @@ router.post("/cancel-subscription", authMiddleware, async (req, res) => {
     .json({ message: "Subscription cancelled successfully" })
 })
 
-router.put("/update-subscription", authMiddleware, async (req, res) => {
-  const user_id = req?.userId
-  const { product } = req.body
-  console.log(product)
-  if (!product) {
-    throw new BadRequestError("Product is required")
-  }
+router.put(
+  "/update-subscription",
+  authMiddleware,
+  validateMiddleware(validator.updateSubscriptionSchema),
+  async (req, res) => {
+    const user_id = req?.userId
+    const { product } = req.body
 
-  if (
-    !product.price ||
-    !product.currency ||
-    !product.package_type ||
-    !product.name ||
-    !product.id
-  ) {
-    throw new BadRequestError("Invalid product structure")
+    await service.updateSubscription(user_id, product)
+    return res
+      .status(201)
+      .json({ message: "Subscription updated successfully" })
   }
-
-  await service.updateSubscription(user_id, product)
-  return res.status(201).json({ message: "Subscription updated successfully" })
-})
+)
 
 router.post("/billings", authMiddleware, async (req, res) => {
   const billingData = {
@@ -104,8 +89,6 @@ router.post("/billings", authMiddleware, async (req, res) => {
   const billing = await service.saveBillingInfo(billingData)
   res.status(201).json({ message: "Billing saved successfully", data: billing })
 })
-
-const bodyParser = require("body-parser")
 
 router.post(
   "/webhook",
@@ -195,16 +178,56 @@ router.get("/packages/:id", authMiddleware, async (req, res) => {
   return res.status(200).json(data)
 })
 
-router.post("/apply-promocode", authMiddleware, async (req, res) => {
-  const user_id = req?.userId
-  const role = req?.role
-  const { promocode } = req.body
+router.post(
+  "/create-promocode",
+  authMiddleware,
+  validateMiddleware(validator.createPromocodeSchema),
+  async (req, res) => {
+    const {
+      code,
+      discount_value,
+      expiration_date,
+      role,
+      is_active,
+      promo_code_type,
+    } = req.body
 
-  const data = await service.applyPromocode(promocode, user_id, role)
-  return res
-    .status(200)
-    .json({ message: "Promocode applied successfully", data })
-})
+    if(req?.role !== "admin") {
+      return res.status(401).json({ message: "Unauthorized" })
+    }
+
+    const data = await service.createPromocode({
+      code: code.toUpperCase(),
+      discount_value,
+      expiration_date,
+      role,
+      is_active,
+      promo_code_type,
+    })
+
+    if (!data) {
+      return res.status(500).json({ message: "Internal Server Error" })
+    }
+
+    return res.status(200).json({ message: "Promocode created successfully" })
+  }
+)
+
+router.post(
+  "/apply-promocode",
+  authMiddleware,
+  validateMiddleware(validator.applyPromocodeSchema),
+  async (req, res) => {
+    const user_id = req?.userId
+    const role = req?.role
+    const { promocode } = req.body
+
+    const data = await service.applyPromocode(promocode, user_id, role)
+    return res
+      .status(200)
+      .json({ message: "Promocode applied successfully", data })
+  }
+)
 
 router.get("/get-referral", authMiddleware, async (req, res) => {
   const user_id = req.userId

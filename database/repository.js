@@ -235,24 +235,33 @@ class Repository {
     return result.rows[0]
   }
 
-  async createPromoCode(code, discount_percent, expiration_date, role) {
+  async createPromoCode({
+    code,
+    discount_value,
+    expiration_date,
+    role,
+    promo_code_type,
+    is_active,
+  }) {
     const result = await DB.query({
-      text: `INSERT INTO promo_codes (code, discount_percent, expiration_date, role) VALUES ($1, $2, $3, $4) RETURNING *`,
-      values: [code, discount_percent, expiration_date, role],
+      text: `INSERT INTO promo_codes (code, discount_value, expiration_date, role, promo_code_type, is_active) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      values: [
+        code,
+        discount_value,
+        expiration_date,
+        role,
+        promo_code_type,
+        is_active,
+      ],
     })
 
     return result.rows[0]
   }
 
-  async updatePromoCode(
-    code,
-    discount_percent,
-    expiration_date,
-    promo_code_id
-  ) {
+  async updatePromoCode(code, discount_value, expiration_date, promo_code_id) {
     const result = await DB.query({
-      text: `UPDATE promo_codes SET code = $1, discount_percent = $2, expiration_date = $3 WHERE id = $4 RETURNING *`,
-      values: [code, discount_percent, expiration_date, promo_code_id],
+      text: `UPDATE promo_codes SET code = $1, discount_value = $2, expiration_date = $3 WHERE id = $4 RETURNING *`,
+      values: [code, discount_value, expiration_date, promo_code_id],
     })
 
     return result.rows[0]

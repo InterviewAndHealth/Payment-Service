@@ -24,21 +24,22 @@ class Service {
     promocode,
     role
   ) {
+    const packageType = product.package_type.toUpperCase()
     let finalPrice = product.price
     let promocode_id = null
+    let stripe_promocode_id = null
     let trialPeriodDays = undefined
+    let discount
 
     if (promocode) {
-      const discount = await this.applyPromocode(promocode, user_id, role)
-
+      discount = await this.applyPromocode(promocode, user_id, role)
       promocode_id = discount.id
 
       if (discount.promo_code_type === "flat") {
         finalPrice = product.price - discount.discount_value
       } else if (discount.promo_code_type === "percentage") {
-        finalPrice = discount
-          ? product.price - (product.price * discount.discount_value) / 100
-          : product.price
+        finalPrice =
+          product.price - (product.price * discount.discount_value) / 100
       } else if (discount.promo_code_type === "trial") {
         trialPeriodDays = discount.discount_value
       } else {
@@ -46,20 +47,19 @@ class Service {
       }
 
       if (isNaN(finalPrice) || finalPrice < 0) {
-        throw new BadRequestError("Something went wrong")
+        throw new BadRequestError("Invalid final price after applying discount")
       }
     }
 
     let stripe_customer_id
-    if (product.package_type.toUpperCase() === "RECURRING") {
+    if (packageType === "RECURRING") {
       const subscription = await this.repository.getActiveSubscription(user_id)
 
       if (subscription) {
-        stripe_customer_id = subscription.stripe_customer_id
         throw new BadRequestError("User already has a subscription")
       } else {
         const stripeCustomer = await stripe.customers.create({
-          name: `${user_id}`,
+          name: user_id,
           metadata: {
             user_id,
           },
@@ -75,54 +75,67 @@ class Service {
       }
     }
 
-    let mode
+    if (
+      promocode_id &&
+      packageType === "RECURRING" &&
+      (discount.promo_code_type === "flat" ||
+        discount.promo_code_type === "percentage")
+    ) {
+      const stripe_promocode = await stripe.coupons.create({
+        duration: "once",
+        amount_off:
+          discount.promo_code_type === "flat"
+            ? discount.discount_value
+            : undefined,
+        percent_off:
+          discount.promo_code_type === "percentage"
+            ? discount.discount_value
+            : undefined,
+        currency: product.currency,
+        max_redemptions: 1,
+        redeem_by: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // Expires in 30 days
+      })
+      stripe_promocode_id = stripe_promocode.id
+    }
+
     let lineItems = [
       {
-        price_data: {
-          currency: product.currency,
-          product_data: {
-            name: product.name,
+        ...(packageType === "RECURRING" && {
+          price: product.price_id,
+        }),
+        ...(packageType === "ONETIME" && {
+          price_data: {
+            currency: product.currency,
+            product_data: { name: product.name },
+            unit_amount: Math.round(finalPrice * 100),
           },
-          unit_amount: Math.round(finalPrice * 100),
-          ...(product.package_type.toUpperCase() === "RECURRING" && {
-            recurring: {
-              interval: "month",
-            },
-          }),
-        },
+        }),
         quantity: product.quantity,
       },
     ]
 
-    if (product.package_type.toUpperCase() === "RECURRING") {
-      mode = "subscription"
-    } else {
-      mode = "payment" // for one-time payment
-    }
-
     const session = await stripe.checkout.sessions.create({
-      mode,
-      ...(product.package_type.toUpperCase() === "RECURRING" && {
-        customer: stripe_customer_id,
-      }),
+      mode: packageType === "RECURRING" ? "subscription" : "payment",
+      customer: packageType === "RECURRING" ? stripe_customer_id : undefined,
       payment_method_types: ["card"],
       line_items: lineItems,
       metadata: {
         promocode_id,
         number_of_interviews,
       },
-      ...(product.package_type.toUpperCase() === "RECURRING" && {
-        subscription_data: {
-          trial_period_days: trialPeriodDays,
-        },
-      }),
+      subscription_data:
+        packageType === "RECURRING" && trialPeriodDays
+          ? {
+              trial_period_days: trialPeriodDays,
+            }
+          : undefined,
+      discounts: stripe_promocode_id
+        ? [{ coupon: stripe_promocode_id }]
+        : undefined,
       success_url: successUrl,
       cancel_url: cancelUrl,
-      allow_promotion_codes: true,
     })
-
     console.log(session)
-
     return { id: session.id }
   }
 
@@ -151,6 +164,7 @@ class Service {
     // Handle the event types you care about
     if (event.type === "checkout.session.completed") {
       const session = event.data.object
+      console.log("checkout.session.completed", session)
 
       // Extract important payment details from the session object
       // const paymentintent_id = session.payment_intent
@@ -227,17 +241,62 @@ class Service {
     // Event when the payment is successfull (every subscription interval)
     if (event.type === "invoice.paid") {
       const invoice = event.data.object
+      console.log("invoice.paid", invoice)
 
+      const stripe_subscription_id = invoice?.subscription || invoice?.discount?.subscription
       await this.repository.updateSubscriptionStatus(
-        invoice.subscription,
+        stripe_subscription_id,
         "ACTIVE"
       )
+      const stripe_customer_id = invoice?.customer || invoice?.discount?.customer
+      const existingSubscription =
+        await this.repository.getSubscriptionByStripeCustomerId(
+          stripe_customer_id
+        )
+      const user_id = existingSubscription.user_id
+      if (existingSubscription) {
+        const pkg = await this.repository.getPackageById(
+          existingSubscription.package_id
+        )
+
+        if (pkg) {
+          const existing = await this.repository.getInterviewByUserId(
+            user_id,
+            pkg.package_type
+          )
+          const interview_availability = pkg.number_of_interviews
+          if (existing.length === 0) {
+            // No record, create one
+            await this.repository.createInterviewAvailability(
+              user_id,
+              interview_availability,
+              pkg.package_type
+            )
+          } else {
+            // Update interviews_available
+            await this.repository.updateInterviewAvailability(
+              user_id,
+              interview_availability,
+              pkg.package_type
+            )
+          }
+        }
+      }
     }
 
     // Event when the payment failed due to card problems or insufficient funds (every subscription interval)
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object
+      console.log("invoice.payment_failed", invoice)
 
+      const existingSubscription =
+        await this.repository.getSubscriptionByStripeCustomerId(
+          invoice.customer
+        )
+      await this.repository.deleteInterviewAvailability(
+        existingSubscription.user_id,
+        "RECURRING"
+      )
       await this.repository.updateSubscriptionStatus(
         invoice.subscription,
         "UNPAID"
@@ -248,7 +307,7 @@ class Service {
     if (event.type === "customer.subscription.updated") {
       const subscription = event.data.object
 
-      console.log("Subscription updated", subscription)
+      console.log("customer.subscription.updated", subscription)
 
       if (subscription.status === "canceled") {
         const existingSubscription =
@@ -264,50 +323,6 @@ class Service {
           subscription.id,
           "CANCELED"
         )
-      }
-
-      if (
-        subscription.status === "active" &&
-        subscription.metadata.type !== "upgrade_subscription"
-      ) {
-        await this.repository.updateSubscriptionStatus(
-          subscription.id,
-          "ACTIVE"
-        )
-
-        const existingSubscription =
-          await this.repository.getSubscriptionByStripeCustomerId(
-            subscription.customer
-          )
-        const user_id = existingSubscription.user_id
-        if (existingSubscription) {
-          const pkg = await this.repository.getPackageById(
-            existingSubscription.package_id
-          )
-
-          if (pkg) {
-            const existing = await this.repository.getInterviewByUserId(
-              user_id,
-              pkg.package_type
-            )
-            const interview_availability = pkg.number_of_interviews
-            if (existing.length === 0) {
-              // No record, create one
-              await this.repository.createInterviewAvailability(
-                user_id,
-                interview_availability,
-                pkg.package_type
-              )
-            } else {
-              // Update interviews_available
-              await this.repository.updateInterviewAvailability(
-                user_id,
-                interview_availability,
-                pkg.package_type
-              )
-            }
-          }
-        }
       }
     }
 
@@ -348,24 +363,13 @@ class Service {
 
     const currentSubscriptionItemId = currentSubscription.items.data[0].id
 
-    const newPrice = await stripe.prices.create({
-      unit_amount: Math.round(product.price * 100),
-      currency: product.currency,
-      recurring: {
-        interval: "month",
-      },
-      product_data: {
-        name: product.name,
-      },
-    })
-
     return await stripe.subscriptions.update(
       subscription.stripe_subscription_id,
       {
         items: [
           {
             id: currentSubscriptionItemId,
-            price: newPrice.id,
+            price: product.price_id,
           },
         ],
         metadata: {
@@ -452,6 +456,33 @@ class Service {
     return packages
   }
 
+  async createPromocode({
+    code,
+    discount_value,
+    expiration_date,
+    role,
+    promo_code_type,
+    is_active,
+  }) {
+    const promocodeExists = await this.repository.checkPromoCodeExists(
+      code,
+      role
+    )
+
+    if (promocodeExists) {
+      throw new BadRequestError("Promocode already exist.")
+    }
+
+    return await this.repository.createPromoCode({
+      code,
+      discount_value,
+      expiration_date,
+      role,
+      promo_code_type,
+      is_active,
+    })
+  }
+
   async applyPromocode(promocode, user_id, role) {
     const promocodeExists = await this.repository.checkPromoCodeExists(
       promocode,
@@ -503,7 +534,7 @@ class Service {
         )
 
         if (referral.total_referrals % 3 === 0) {
-          const discount_percent = Math.min(
+          const discount_value = Math.min(
             Math.floor(referral.total_referrals / 3) * 10,
             50
           )
@@ -515,17 +546,18 @@ class Service {
 
           if (referral.promo_code_id === null) {
             // Create new promo code
-            promo_code = await this.repository.createPromoCode(
-              this.generateReferralCode(),
-              discount_percent,
+            promo_code = await this.repository.createPromoCode({
+              code: this.generateReferralCode(),
+              discount_value,
               expiration_date,
-              role
-            )
+              role,
+              promo_code_type: "percentage",
+            })
           } else {
             // Update promo code
             promo_code = await this.repository.updatePromoCode(
               this.generateReferralCode(),
-              discount_percent,
+              discount_value,
               expiration_date,
               referral.promo_code_id
             )

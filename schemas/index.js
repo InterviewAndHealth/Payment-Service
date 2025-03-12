@@ -21,7 +21,6 @@ class Validator {
     product: {
       id: joi.string().required(),
       price_id: joi.string().required(),
-      quantity: joi.number().required(),
       price: joi.number().required(),
       currency: joi.string().required(),
       package_type: joi.string().required(),

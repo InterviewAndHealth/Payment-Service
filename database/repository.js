@@ -315,7 +315,12 @@ class Repository {
 
   async getActiveSubscription(user_id) {
     const result = await DB.query({
-      text: `SELECT * FROM subscriptions WHERE user_id = $1 AND status = 'ACTIVE'`,
+      text: `SELECT s.*, p.ai_screening
+FROM subscriptions s
+JOIN packages p ON s.package_id = p.id
+WHERE s.user_id = $1
+  AND s.status = 'ACTIVE';
+`,
       values: [user_id],
     })
     return result.rows[0]

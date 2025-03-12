@@ -552,6 +552,7 @@ class Service {
               expiration_date,
               role,
               promo_code_type: "percentage",
+              is_active: true,
             })
           } else {
             // Update promo code

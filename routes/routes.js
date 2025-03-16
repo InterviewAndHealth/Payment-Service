@@ -190,6 +190,7 @@ router.post(
       role,
       is_active,
       promo_code_type,
+      currency
     } = req.body
 
     if(req?.role !== "admin") {
@@ -203,6 +204,7 @@ router.post(
       role,
       is_active,
       promo_code_type,
+      currency
     })
 
     if (!data) {
@@ -213,6 +215,16 @@ router.post(
   }
 )
 
+router.get("/promocodes", authMiddleware, async (req, res) => {
+  if (req?.role !== "admin") {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const data = await service.getAllPromocodes()
+
+  return res.status(200).json(data)
+})
+
 router.post(
   "/apply-promocode",
   authMiddleware,
@@ -220,9 +232,9 @@ router.post(
   async (req, res) => {
     const user_id = req?.userId
     const role = req?.role
-    const { promocode } = req.body
+    const { promocode, currency } = req.body
 
-    const data = await service.applyPromocode(promocode, user_id, role)
+    const data = await service.applyPromocode({promocode, user_id, role, currency: currency.toUpperCase()})
     return res
       .status(200)
       .json({ message: "Promocode applied successfully", data })

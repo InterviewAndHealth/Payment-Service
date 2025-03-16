@@ -43,10 +43,12 @@ class Validator {
     role: joi.string().required(),
     is_active: joi.boolean().required(),
     promo_code_type: joi.string().required(),
+    currency: joi.string().required(),
   })
 
   applyPromocodeSchema = joi.object().keys({
     promocode: joi.string().required(),
+    currency: joi.string().required(),
   })
 }
 

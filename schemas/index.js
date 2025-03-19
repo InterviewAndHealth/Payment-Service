@@ -21,7 +21,6 @@ class Validator {
     product: {
       id: joi.string().required(),
       price_id: joi.string().required(),
-      quantity: joi.number().required(),
       price: joi.number().required(),
       currency: joi.string().required(),
       package_type: joi.string().required(),
@@ -44,10 +43,12 @@ class Validator {
     role: joi.string().required(),
     is_active: joi.boolean().required(),
     promo_code_type: joi.string().required(),
+    currency: joi.string().required(),
   })
 
   applyPromocodeSchema = joi.object().keys({
     promocode: joi.string().required(),
+    currency: joi.string().required(),
   })
 }
 

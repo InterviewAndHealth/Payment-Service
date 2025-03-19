@@ -20,16 +20,17 @@ CREATE TABLE IF NOT EXISTS promo_codes (
     role role NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     promo_code_type promo_code_type NOT NULL,
+    currency VARCHAR(10) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM promo_codes) THEN
-        INSERT INTO promo_codes (code, discount_value, role, expiration_date, promo_code_type)
+        INSERT INTO promo_codes (code, discount_value, role, expiration_date, promo_code_type, currency)
         VALUES
-        ('P01EDW60', 99, 'student', '2026-01-01', 'percentage'),
-        ('7U1I047I', 100, 'student', '2026-01-01', 'percentage'),
-        ('W9F4GS46', 100, 'student', '2026-01-01', 'trial');
+        ('P01EDW60', 99, 'student', '2026-01-01', 'percentage', 'INR'),
+        ('7U1I047I', 100, 'student', '2026-01-01', 'percentage', 'USD'),
+        ('W9F4GS46', 100, 'student', '2026-01-01', 'trial', 'GBP');
     END IF;
 END $$;
